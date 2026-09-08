@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { clearSettings, loadSettings, saveSettings, type KeySettings } from "@/lib/keys";
+import { getKokoroStatus, installKokoro } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -25,11 +27,41 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const runInstallKokoro = useServerFn(installKokoro);
+  const checkKokoro = useServerFn(getKokoroStatus);
+
   const [settings, setSettings] = useState<KeySettings | null>(null);
+  const [kokoroReady, setKokoroReady] = useState(false);
+  const [kokoroInstalling, setKokoroInstalling] = useState(false);
 
   useEffect(() => {
     setSettings(loadSettings());
-  }, []);
+    void (async () => {
+      try {
+        const { installed } = await checkKokoro();
+        setKokoroReady(installed);
+      } catch {
+        /* check failed */
+      }
+    })();
+  }, [checkKokoro]);
+
+  const handleInstallKokoro = async () => {
+    setKokoroInstalling(true);
+    try {
+      const res = await runInstallKokoro();
+      setKokoroReady(true);
+      if (settings) {
+        saveSettings({ ...settings, ttsProvider: "kokoro", voice: "auto" });
+        setSettings({ ...settings, ttsProvider: "kokoro", voice: "auto" });
+      }
+      toast.success(res.message || "Kokoro-82M installed and active!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download Kokoro model");
+    } finally {
+      setKokoroInstalling(false);
+    }
+  };
 
   const clearHistory = async () => {
     if (!user) {
@@ -57,17 +89,23 @@ function SettingsPage() {
             value={
               settings?.ttsProvider === "none"
                 ? "Browser voice (robotic fallback)"
-                : settings?.ttsProvider === "edge"
-                  ? `Neural HD (Free) · ${
+                : settings?.ttsProvider === "kokoro"
+                  ? `Kokoro-82M (Local, High Quality) · ${
                       settings?.voice === "auto" || !settings?.voice
                         ? "Auto (Section-tuned)"
                         : settings?.voice
                     }`
-                  : `${settings?.ttsProvider === "elevenlabs" ? "ElevenLabs" : "OpenAI"} · ${
-                      settings?.voice === "auto" || !settings?.voice
-                        ? "Auto (Section-tuned)"
-                        : settings?.voice
-                    }`
+                  : settings?.ttsProvider === "edge"
+                    ? `Neural HD (Free) · ${
+                        settings?.voice === "auto" || !settings?.voice
+                          ? "Auto (Section-tuned)"
+                          : settings?.voice
+                      }`
+                    : `${settings?.ttsProvider === "elevenlabs" ? "ElevenLabs" : "OpenAI"} · ${
+                        settings?.voice === "auto" || !settings?.voice
+                          ? "Auto (Section-tuned)"
+                          : settings?.voice
+                      }`
             }
           />
           <Row label="Account" value={user?.email ?? "Signed out (this device only)"} />
@@ -80,7 +118,36 @@ function SettingsPage() {
           >
             Configure AI & Voice
           </Link>
-          {settings?.ttsProvider !== "edge" ? (
+
+          {/* Kokoro Switch / Download button */}
+          {settings?.ttsProvider !== "kokoro" ? (
+            kokoroReady ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (settings) saveSettings({ ...settings, ttsProvider: "kokoro", voice: "auto" });
+                  setSettings((prev) =>
+                    prev ? { ...prev, ttsProvider: "kokoro", voice: "auto" } : prev,
+                  );
+                  toast.success("Switched to Kokoro-82M Local Voice");
+                }}
+                className="rounded-full border border-primary/50 bg-primary/10 px-5 py-2.5 text-sm text-primary transition-colors duration-300 hover:bg-primary/20"
+              >
+                Use Kokoro-82M (Local)
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={kokoroInstalling}
+                onClick={handleInstallKokoro}
+                className="rounded-full border border-primary/50 bg-primary/10 px-5 py-2.5 text-sm text-primary transition-colors duration-300 hover:bg-primary/20 disabled:opacity-50"
+              >
+                {kokoroInstalling ? "Downloading Kokoro (80MB)..." : "Install Kokoro (~80MB)"}
+              </button>
+            )
+          ) : null}
+
+          {settings?.ttsProvider !== "edge" && (
             <button
               type="button"
               onClick={() => {
@@ -90,11 +157,13 @@ function SettingsPage() {
                 );
                 toast.success("Switched to Free Neural HD Voice");
               }}
-              className="rounded-full border border-primary/50 bg-primary/10 px-5 py-2.5 text-sm text-primary transition-colors duration-300 hover:bg-primary/20"
+              className="rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground"
             >
               Use Neural HD (Free)
             </button>
-          ) : (
+          )}
+
+          {settings?.ttsProvider !== "none" && (
             <button
               type="button"
               onClick={() => {
@@ -102,7 +171,7 @@ function SettingsPage() {
                 setSettings((prev) =>
                   prev ? { ...prev, ttsProvider: "none", ttsKey: "" } : prev,
                 );
-                toast.success("Switched to the browser voice");
+                toast.success("Switched to browser voice");
               }}
               className="rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground"
             >

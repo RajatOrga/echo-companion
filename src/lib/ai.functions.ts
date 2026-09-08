@@ -141,8 +141,39 @@ export const runTurn = createServerFn({ method: "POST" })
   .validator((input: unknown) => ChatInput.parse(input))
   .handler(({ data }) => chat(data));
 
+// Kokoro-82M model instance cache for fast offline inference
+let kokoroInstance: unknown = null;
+
+async function getKokoro() {
+  if (!kokoroInstance) {
+    const { KokoroTTS } = await import("kokoro-js");
+    kokoroInstance = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", {
+      dtype: "q8",
+    });
+  }
+  return kokoroInstance as {
+    generate: (
+      text: string,
+      options: { voice: string },
+    ) => Promise<{ toWav: () => ArrayBuffer }>;
+  };
+}
+
+export const installKokoro = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ ok: boolean; message: string }> => {
+    await getKokoro();
+    return { ok: true, message: "Kokoro-82M is downloaded and ready for offline use!" };
+  },
+);
+
+export const getKokoroStatus = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ installed: boolean }> => {
+    return { installed: kokoroInstance !== null };
+  },
+);
+
 const SpeakInput = z.object({
-  ttsProvider: z.enum(["edge", "openai", "elevenlabs"]),
+  ttsProvider: z.enum(["edge", "kokoro", "openai", "elevenlabs"]),
   ttsKey: z.string().optional().default(""),
   voice: z.string().min(1),
   text: z.string().min(1).max(4000),
@@ -153,6 +184,15 @@ const SpeakInput = z.object({
 export const speak = createServerFn({ method: "POST" })
   .validator((input: unknown) => SpeakInput.parse(input))
   .handler(async ({ data }): Promise<{ audio: string; mimeType: string }> => {
+    if (data.ttsProvider === "kokoro") {
+      const tts = await getKokoro();
+      const rawAudio = await tts.generate(data.text, {
+        voice: data.voice || "af_heart",
+      });
+      const wavBuffer = Buffer.from(rawAudio.toWav());
+      return { audio: wavBuffer.toString("base64"), mimeType: "audio/wav" };
+    }
+
     if (data.ttsProvider === "edge") {
       const { MsEdgeTTS, OUTPUT_FORMAT } = await import("msedge-tts");
       const tts = new MsEdgeTTS();

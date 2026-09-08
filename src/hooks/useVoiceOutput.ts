@@ -4,7 +4,7 @@ import type { KeySettings } from "@/lib/keys";
 
 type SpeakFn = (input: {
   data: {
-    ttsProvider: "edge" | "openai" | "elevenlabs";
+    ttsProvider: "edge" | "kokoro" | "openai" | "elevenlabs";
     ttsKey: string;
     voice: string;
     text: string;
@@ -103,7 +103,9 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
       cleanup();
       if (
         settings.ttsProvider === "none" ||
-        (settings.ttsProvider !== "edge" && !settings.ttsKey.trim())
+        (settings.ttsProvider !== "edge" &&
+          settings.ttsProvider !== "kokoro" &&
+          !settings.ttsKey.trim())
       ) {
         let rate = options?.browser?.rate ?? 0.98;
         let pitch = options?.browser?.pitch ?? 1.0;
@@ -121,11 +123,13 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
       }
       try {
         const defaultVoice =
-          settings.ttsProvider === "edge"
-            ? "en-US-AvaMultilingualNeural"
-            : settings.ttsProvider === "elevenlabs"
-              ? "21m00Tcm4TlvDq8ikWAM"
-              : "alloy";
+          settings.ttsProvider === "kokoro"
+            ? "af_heart"
+            : settings.ttsProvider === "edge"
+              ? "en-US-AvaMultilingualNeural"
+              : settings.ttsProvider === "elevenlabs"
+                ? "21m00Tcm4TlvDq8ikWAM"
+                : "alloy";
         const voice =
           options?.voice || (settings.voice !== "auto" ? settings.voice : defaultVoice);
         const { audio } = await speakFn({

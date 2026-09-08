@@ -13,7 +13,7 @@ export type KeySettings = {
   apiKey: string;
   model: string;
   baseUrl: string;
-  ttsProvider: "edge" | "openai" | "elevenlabs" | "none";
+  ttsProvider: "edge" | "kokoro" | "openai" | "elevenlabs" | "none";
   ttsKey: string;
   voice: string;
 };
@@ -26,6 +26,18 @@ export const DEFAULT_MODELS: Record<LlmProvider, string> = {
   gemini: "gemini-2.0-flash",
   custom: "",
 };
+
+export const KOKORO_VOICES = [
+  { id: "auto", name: "Auto (Section-tuned)", description: "Adapts to Interview, Casual, Companion, etc." },
+  { id: "af_heart", name: "Heart (Warm & Emotional)", description: "Grade A American female (Top Quality)" },
+  { id: "af_bella", name: "Bella (Expressive & Dynamic)", description: "Grade A American female" },
+  { id: "af_nicole", name: "Nicole (Conversational)", description: "Clear, natural American female" },
+  { id: "af_sarah", name: "Sarah (Gentle & Tender)", description: "Soft, intimate American female" },
+  { id: "am_michael", name: "Michael (Authoritative)", description: "Deep, confident American male" },
+  { id: "am_fenrir", name: "Fenrir (Grounded & Rich)", description: "Resonant American male" },
+  { id: "bf_emma", name: "Emma (British Accent)", description: "Clear, articulate British female" },
+  { id: "bm_george", name: "George (British Accent)", description: "Warm, distinguished British male" },
+] as const;
 
 export const EDGE_VOICES = [
   { id: "auto", name: "Auto (Section-tuned)", description: "Adapts to Interview, Casual, Companion, etc." },
@@ -68,6 +80,9 @@ export const ELEVENLABS_VOICES = [
 export function getVoiceForMode(settings: KeySettings, mode: Mode): string {
   if (settings.voice && settings.voice !== "auto") {
     return settings.voice;
+  }
+  if (settings.ttsProvider === "kokoro") {
+    return mode.voice.kokoro || "af_heart";
   }
   if (settings.ttsProvider === "elevenlabs") {
     return mode.voice.elevenlabs.id;

@@ -14,6 +14,39 @@ function normalize(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/**
+ * Strips vendor prefixes (Daz FACS, eCTRL, ARKit, Mixamo, VRM)
+ * and generates bidirectional aliases (e.g. Left/Right <-> L/R)
+ * so Daz 3D & custom rigs bind seamlessly with ARKit 52 morphs.
+ */
+function getMorphAliases(name: string): string[] {
+  const norm = normalize(name);
+  const aliases = new Set<string>([norm]);
+
+  // Strip common 3D vendor / blendshape prefixes:
+  // facs_ctrl_, facs_jnt_, facs_, ectrl_, ejcm_, ctrl_, vrm_, blendshape_, bs_
+  const stripped = norm.replace(/^(facsctrl|facsjnt|facs|ectrl|ejcm|ctrl|vrm|blendshape|bs)/, "");
+  if (stripped && stripped !== norm) {
+    aliases.add(stripped);
+  }
+
+  // Generate Left/Right <-> L/R equivalents for ARKit / Daz morph matching
+  for (const a of Array.from(aliases)) {
+    if (a.endsWith("left")) {
+      aliases.add(a.slice(0, -4) + "l");
+    } else if (a.endsWith("l") && !a.endsWith("all")) {
+      aliases.add(a.slice(0, -1) + "left");
+    }
+    if (a.endsWith("right")) {
+      aliases.add(a.slice(0, -5) + "r");
+    } else if (a.endsWith("r")) {
+      aliases.add(a.slice(0, -1) + "right");
+    }
+  }
+
+  return Array.from(aliases);
+}
+
 type Targets = { mesh: THREE.SkinnedMesh; map: Map<string, number> };
 
 function RealisticAvatar({
@@ -67,7 +100,12 @@ function RealisticAvatar({
         if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
           const map = new Map<string, number>();
           for (const [key, index] of Object.entries(mesh.morphTargetDictionary)) {
-            map.set(normalize(key), index as number);
+            const idx = index as number;
+            for (const alias of getMorphAliases(key)) {
+              if (!map.has(alias)) {
+                map.set(alias, idx);
+              }
+            }
           }
           found.push({ mesh, map });
         }
@@ -76,7 +114,8 @@ function RealisticAvatar({
     return found;
   }, [avatar]);
 
-  // Locate skeletal bones for posing and lifelike head movement
+  // Locate skeletal bones for posing and lifelike head movement across rigs
+  // (ReadyPlayerMe, Daz Genesis 3/8/8.1/9, Mixamo, Unreal)
   const bones = useMemo(() => {
     let head: THREE.Bone | null = null;
     let neck: THREE.Bone | null = null;
@@ -89,14 +128,39 @@ function RealisticAvatar({
 
     avatar.traverse((child) => {
       if (child.type === "Bone") {
-        if (child.name === "Head") head = child as THREE.Bone;
-        else if (child.name === "Neck") neck = child as THREE.Bone;
-        else if (child.name === "Spine") spine = child as THREE.Bone;
-        else if (child.name === "Spine1" || child.name === "Spine2") spine1 = child as THREE.Bone;
-        else if (child.name === "LeftShoulder") leftShoulder = child as THREE.Bone;
-        else if (child.name === "RightShoulder") rightShoulder = child as THREE.Bone;
-        else if (child.name === "LeftArm") leftArm = child as THREE.Bone;
-        else if (child.name === "RightArm") rightArm = child as THREE.Bone;
+        const n = child.name.toLowerCase();
+        // Head bone
+        if (!head && (n === "head" || n.endsWith("_head") || n.includes("mixamorighead") || n.includes("genesis8_head") || n.includes("genesis9_head"))) {
+          head = child as THREE.Bone;
+        }
+        // Neck bone
+        else if (!neck && (n === "neck" || n === "neckupper" || n === "necklower" || n.endsWith("_neck") || n.includes("mixamorigneck"))) {
+          neck = child as THREE.Bone;
+        }
+        // Lower Spine / Abdomen
+        else if (!spine && (n === "spine" || n === "abdomenlower" || n === "abdomen" || n.includes("mixamorigspine"))) {
+          spine = child as THREE.Bone;
+        }
+        // Upper Spine / Chest
+        else if (!spine1 && (n === "spine1" || n === "spine2" || n === "chest" || n === "chestupper" || n.includes("mixamorigspine1") || n.includes("mixamorigspine2"))) {
+          spine1 = child as THREE.Bone;
+        }
+        // Left Shoulder / Clavicle
+        else if (!leftShoulder && (n === "leftshoulder" || n === "lshldr" || n === "lcollar" || n.includes("mixamorigleftshoulder"))) {
+          leftShoulder = child as THREE.Bone;
+        }
+        // Right Shoulder / Clavicle
+        else if (!rightShoulder && (n === "rightshoulder" || n === "rshldr" || n === "rcollar" || n.includes("mixamorigrightshoulder"))) {
+          rightShoulder = child as THREE.Bone;
+        }
+        // Left Arm / Upper Arm
+        else if (!leftArm && (n === "leftarm" || n === "lshldrbend" || n === "lupperarm" || n.includes("mixamorigleftarm"))) {
+          leftArm = child as THREE.Bone;
+        }
+        // Right Arm / Upper Arm
+        else if (!rightArm && (n === "rightarm" || n === "rshldrbend" || n === "rupperarm" || n.includes("mixamorigrightarm"))) {
+          rightArm = child as THREE.Bone;
+        }
       }
     });
     return { head, neck, spine, spine1, leftShoulder, rightShoulder, leftArm, rightArm };
@@ -107,14 +171,14 @@ function RealisticAvatar({
     avatar.traverse((child) => {
       if (child.type === "Bone") {
         const bone = child as THREE.Bone;
-        // Pose legs into a seated position
-        if (bone.name === "LeftArm") {
+        const n = bone.name.toLowerCase();
+        if (n === "leftarm" || n === "lshldrbend" || n === "lupperarm" || n.includes("mixamorigleftarm")) {
           bone.rotation.set(1.31, 0.19, 0.12);
-        } else if (bone.name === "RightArm") {
+        } else if (n === "rightarm" || n === "rshldrbend" || n === "rupperarm" || n.includes("mixamorigrightarm")) {
           bone.rotation.set(1.31, -0.19, -0.12);
-        } else if (bone.name === "LeftForeArm") {
+        } else if (n === "leftforearm" || n === "lforearmbend" || n.includes("mixamorigleftforearm")) {
           bone.rotation.set(0.18, 0.12, 0.38);
-        } else if (bone.name === "RightForeArm") {
+        } else if (n === "rightforearm" || n === "rforearmbend" || n.includes("mixamorigrightforearm")) {
           bone.rotation.set(0.18, -0.12, -0.38);
         }
       }

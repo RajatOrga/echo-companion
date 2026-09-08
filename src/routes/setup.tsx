@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Check, Loader2, ShieldCheck } from "lucide-react";
+import { Check, Download, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { testConnection } from "@/lib/ai.functions";
+import { getKokoroStatus, installKokoro, testConnection } from "@/lib/ai.functions";
 import {
   DEFAULT_MODELS,
   EDGE_VOICES,
   ELEVENLABS_VOICES,
+  KOKORO_VOICES,
   OPENAI_VOICES,
   loadSettings,
   saveSettings,
@@ -46,19 +47,45 @@ const PROVIDERS: { value: LlmProvider; label: string }[] = [
 function SetupPage() {
   const navigate = useNavigate();
   const runTest = useServerFn(testConnection);
+  const runInstallKokoro = useServerFn(installKokoro);
+  const checkKokoro = useServerFn(getKokoroStatus);
+
   const [settings, setSettings] = useState<KeySettings | null>(null);
   const [testing, setTesting] = useState(false);
   const [tested, setTested] = useState(false);
+  const [kokoroInstalling, setKokoroInstalling] = useState(false);
+  const [kokoroReady, setKokoroReady] = useState(false);
 
   useEffect(() => {
     setSettings(loadSettings());
-  }, []);
+    void (async () => {
+      try {
+        const { installed } = await checkKokoro();
+        setKokoroReady(installed);
+      } catch {
+        /* check failed */
+      }
+    })();
+  }, [checkKokoro]);
 
   if (!settings) return <main className="min-h-screen" />;
 
   const update = (patch: Partial<KeySettings>) => {
     setTested(false);
     setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const handleInstallKokoro = async () => {
+    setKokoroInstalling(true);
+    try {
+      const res = await runInstallKokoro();
+      setKokoroReady(true);
+      toast.success(res.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download Kokoro model");
+    } finally {
+      setKokoroInstalling(false);
+    }
   };
 
   const handleTest = async () => {
@@ -167,8 +194,9 @@ function SetupPage() {
             <div className="flex flex-wrap gap-2">
               {(
                 [
-                  { id: "edge", label: "Neural HD (Free & Realistic)" },
-                  { id: "elevenlabs", label: "ElevenLabs (Ultra Emotional)" },
+                  { id: "kokoro", label: "Kokoro-82M (Local Neural, ~80MB)" },
+                  { id: "edge", label: "Edge Neural (Free Cloud)" },
+                  { id: "elevenlabs", label: "ElevenLabs (Actor Grade)" },
                   { id: "openai", label: "OpenAI Voice" },
                   { id: "none", label: "Browser Voice" },
                 ] as const
@@ -189,7 +217,59 @@ function SetupPage() {
             </div>
           </div>
 
-          {settings.ttsProvider === "edge" ? (
+          {settings.ttsProvider === "kokoro" ? (
+            <div className="space-y-3 rounded-2xl border border-primary/25 bg-card/60 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="flex items-center gap-1.5 text-sm font-medium">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Kokoro-82M Local Neural TTS
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    State-of-the-art 82M model running 100% locally and offline on your computer.
+                  </p>
+                </div>
+                {kokoroReady ? (
+                  <span className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
+                    <Check className="h-3 w-3" /> Ready
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleInstallKokoro}
+                    disabled={kokoroInstalling}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-transform hover:scale-105 disabled:opacity-50"
+                  >
+                    {kokoroInstalling ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    {kokoroInstalling ? "Downloading..." : "Download (~80MB)"}
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-1.5 pt-1">
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Kokoro Voice Preset
+                </label>
+                <div className="grid gap-2">
+                  <select
+                    value={settings.voice || "auto"}
+                    onChange={(event) => update({ voice: event.target.value })}
+                    className="w-full rounded-xl border border-input bg-card px-4 py-2.5 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+                  >
+                    {KOKORO_VOICES.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} — {v.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          ) : settings.ttsProvider === "edge" ? (
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">
                 Neural Voice Preset
