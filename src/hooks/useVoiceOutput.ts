@@ -1,0 +1,130 @@
+import { useCallback, useEffect, useRef } from "react";
+import type { EmotionEngine } from "@/lib/emotion";
+import type { KeySettings } from "@/lib/keys";
+
+type SpeakFn = (input: {
+  data: { ttsProvider: "openai" | "elevenlabs"; ttsKey: string; voice: string; text: string };
+}) => Promise<{ audio: string; mimeType: string }>;
+
+function base64ToBytes(base64: string) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+/**
+ * Speaks a reply and drives the mouth from the loudness of the audio.
+ * Falls back to the browser's own voice when no voice key is configured.
+ */
+export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
+  const ctxRef = useRef<AudioContext | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const stopRef = useRef<(() => void) | null>(null);
+
+  const cleanup = useCallback(() => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+    stopRef.current?.();
+    stopRef.current = null;
+    engine.setMouth(0);
+  }, [engine]);
+
+  useEffect(() => cleanup, [cleanup]);
+
+  const browserVoice = useCallback(
+    (text: string) =>
+      new Promise<void>((resolve) => {
+        if (typeof window === "undefined" || !window.speechSynthesis) {
+          resolve();
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.98;
+        utterance.pitch = 1.02;
+        // No audio graph available for browser speech: fake a natural mouth rhythm.
+        let t = 0;
+        const tick = () => {
+          t += 0.05;
+          const level =
+            0.25 + Math.abs(Math.sin(t * 6.1)) * 0.4 + Math.abs(Math.sin(t * 2.3)) * 0.25;
+          engine.setMouth(Math.min(level, 1));
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+        const finish = () => {
+          cleanup();
+          resolve();
+        };
+        utterance.onend = finish;
+        utterance.onerror = finish;
+        window.speechSynthesis.speak(utterance);
+      }),
+    [cleanup, engine],
+  );
+
+  const speak = useCallback(
+    async (text: string, settings: KeySettings) => {
+      cleanup();
+      if (settings.ttsProvider === "none" || !settings.ttsKey.trim()) {
+        await browserVoice(text);
+        return;
+      }
+      try {
+        const { audio } = await speakFn({
+          data: {
+            ttsProvider: settings.ttsProvider,
+            ttsKey: settings.ttsKey,
+            voice: settings.voice || "alloy",
+            text,
+          },
+        });
+        const ctx = ctxRef.current ?? new AudioContext();
+        ctxRef.current = ctx;
+        if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+        const bytes = base64ToBytes(audio);
+        const buffer = await ctx.decodeAudioData(bytes.buffer as ArrayBuffer);
+        const source = ctx.createBufferSource();
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        source.buffer = buffer;
+        source.connect(analyser);
+        analyser.connect(ctx.destination);
+        const data = new Uint8Array(analyser.fftSize);
+
+        await new Promise<void>((resolve) => {
+          const tick = () => {
+            analyser.getByteTimeDomainData(data);
+            let sum = 0;
+            for (let i = 0; i < data.length; i += 1) {
+              const v = (data[i]! - 128) / 128;
+              sum += v * v;
+            }
+            const rms = Math.sqrt(sum / data.length);
+            engine.setMouth(Math.min(rms * 4.2, 1));
+            rafRef.current = requestAnimationFrame(tick);
+          };
+          stopRef.current = () => {
+            try {
+              source.stop();
+            } catch {
+              /* already ended */
+            }
+          };
+          source.onended = () => {
+            cleanup();
+            resolve();
+          };
+          source.start();
+          rafRef.current = requestAnimationFrame(tick);
+        });
+      } catch {
+        await browserVoice(text);
+      }
+    },
+    [browserVoice, cleanup, engine, speakFn],
+  );
+
+  return { speak, stopSpeaking: cleanup };
+}
