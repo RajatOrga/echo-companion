@@ -62,9 +62,9 @@ function RealisticAvatar({
   engine: EmotionEngine;
   gazeRef: { current: string };
   active: boolean;
-  listening?: boolean;
-  headGesture?: string;
-  gestureKey?: number;
+  listening?: boolean | undefined;
+  headGesture?: string | undefined;
+  gestureKey?: number | undefined;
   config: SceneConfig;
 }) {
   const modelUrl = config.avatar || "/models/avatars/companion_female.glb";
@@ -125,9 +125,37 @@ function RealisticAvatar({
     return found;
   }, [avatar]);
 
+interface BonesDict {
+  head: THREE.Bone | null;
+  neck: THREE.Bone | null;
+  spine: THREE.Bone | null;
+  spine1: THREE.Bone | null;
+  leftShoulder: THREE.Bone | null;
+  rightShoulder: THREE.Bone | null;
+  leftArm: THREE.Bone | null;
+  rightArm: THREE.Bone | null;
+  leftForearm: THREE.Bone | null;
+  rightForearm: THREE.Bone | null;
+  leftThigh: THREE.Bone | null;
+  rightThigh: THREE.Bone | null;
+  leftCalf: THREE.Bone | null;
+  rightCalf: THREE.Bone | null;
+  mouth: THREE.Bone | null;
+  lowerLip: THREE.Bone | null;
+  upperEyelidL: THREE.Bone | null;
+  upperEyelidR: THREE.Bone | null;
+  lowerEyelidL: THREE.Bone | null;
+  lowerEyelidR: THREE.Bone | null;
+  browL: THREE.Bone | null;
+  browR: THREE.Bone | null;
+  eyeballL: THREE.Bone | null;
+  eyeballR: THREE.Bone | null;
+  isBip: boolean;
+}
+
   // Locate skeletal bones for posing and lifelike head/face movement across rigs
   // (ReadyPlayerMe, Daz Genesis 3/8/8.1/9, Mixamo, Unreal, 3ds Max Bip001)
-  const bones = useMemo(() => {
+  const bones = useMemo<BonesDict>(() => {
     let head: THREE.Bone | null = null;
     let neck: THREE.Bone | null = null;
     let spine: THREE.Bone | null = null;
@@ -254,28 +282,43 @@ function RealisticAvatar({
 
   // Seated pose setup: bends thighs & knees to sit on the chair, rests arms on lap
   useEffect(() => {
+    // Helper avoids TS narrowing bug where Bone|null collapses to 'never'
+    const rot = (bone: THREE.Bone | null, x: number, y: number, z: number) => {
+      if (bone) bone.rotation.set(x, y, z);
+    };
+    const rotAdd = (bone: THREE.Bone | null, axis: "x" | "y" | "z", deg: number) => {
+      if (bone) bone.rotation[axis] += deg * (Math.PI / 180);
+    };
+    const d = (deg: number) => deg * (Math.PI / 180);
+
     if (bones.isBip) {
       // 1. Pose legs to sit comfortably on chair
-      if (bones.leftThigh) bones.leftThigh.rotation.set(-Math.PI, 0, (179.6 - 82) * (Math.PI / 180));
-      if (bones.rightThigh) bones.rightThigh.rotation.set(-Math.PI, 0, (179.6 - 82) * (Math.PI / 180));
-      if (bones.leftCalf) bones.leftCalf.rotation.set(0, 0, (-2.3 + 86) * (Math.PI / 180));
-      if (bones.rightCalf) bones.rightCalf.rotation.set(0, 0, (-2.3 + 86) * (Math.PI / 180));
+      rot(bones.leftThigh, -Math.PI, 0, d(179.6 - 82));
+      rot(bones.rightThigh, -Math.PI, 0, d(179.6 - 82));
+      rot(bones.leftCalf, 0, 0, d(-2.3 + 86));
+      rot(bones.rightCalf, 0, 0, d(-2.3 + 86));
 
       // 2. Pose arms to rest naturally on lap instead of locked in A-pose
-      if (bones.leftArm) bones.leftArm.rotation.set(5.1 * (Math.PI / 180), 20 * (Math.PI / 180), -42 * (Math.PI / 180));
-      if (bones.rightArm) bones.rightArm.rotation.set(-5.1 * (Math.PI / 180), -20 * (Math.PI / 180), -42 * (Math.PI / 180));
-      if (bones.leftForearm) bones.leftForearm.rotation.set(0, 15 * (Math.PI / 180), 28 * (Math.PI / 180));
-      if (bones.rightForearm) bones.rightForearm.rotation.set(0, -15 * (Math.PI / 180), 28 * (Math.PI / 180));
+      rot(bones.leftArm, d(5.1), d(8), d(-62));
+      rot(bones.rightArm, d(-5.1), d(-8), d(-62));
+      rot(bones.leftForearm, 0, d(30), d(55));
+      rot(bones.rightForearm, 0, d(-30), d(55));
+
+      // 3. Slight forward lean in spine for natural seated posture
+      rotAdd(bones.spine1, "x", 6);
+
+      // 4. Subtle head tilt — adds life to the resting pose
+      rotAdd(bones.head, "z", 3);
     } else {
       // Standard rigs (Mixamo / ReadyPlayerMe / Daz Genesis)
-      if (bones.leftArm) bones.leftArm.rotation.set(1.31, 0.19, 0.12);
-      if (bones.rightArm) bones.rightArm.rotation.set(1.31, -0.19, -0.12);
-      if (bones.leftForearm) bones.leftForearm.rotation.set(0.18, 0.12, 0.38);
-      if (bones.rightForearm) bones.rightForearm.rotation.set(0.18, -0.12, -0.38);
-      if (bones.leftThigh) bones.leftThigh.rotation.set(1.48, 0.1, 0.08);
-      if (bones.rightThigh) bones.rightThigh.rotation.set(1.48, -0.1, -0.08);
-      if (bones.leftCalf) bones.leftCalf.rotation.set(-1.42, 0, 0);
-      if (bones.rightCalf) bones.rightCalf.rotation.set(-1.42, 0, 0);
+      rot(bones.leftArm, 1.31, 0.19, 0.12);
+      rot(bones.rightArm, 1.31, -0.19, -0.12);
+      rot(bones.leftForearm, 0.18, 0.12, 0.38);
+      rot(bones.rightForearm, 0.18, -0.12, -0.38);
+      rot(bones.leftThigh, 1.48, 0.1, 0.08);
+      rot(bones.rightThigh, 1.48, -0.1, -0.08);
+      rot(bones.leftCalf, -1.42, 0, 0);
+      rot(bones.rightCalf, -1.42, 0, 0);
     }
   }, [bones]);
 
@@ -358,7 +401,7 @@ function RealisticAvatar({
       }
 
       // Drive Oculus visemes for mouth movement if present
-      const jaw = weights.jawOpen ?? 0;
+      const jaw = weights["jawOpen"] ?? 0;
       const visemeAa = map.get("visemeaa");
       if (visemeAa !== undefined) {
         influences[visemeAa] = Math.min(jaw * 0.95, 1);
@@ -370,43 +413,68 @@ function RealisticAvatar({
     }
 
     // Bone-driven jaw & mouth opening (lip-sync for mint.glb / skeletal rigs)
-    if (bones.mouth) {
-      if (!initialMouthPos.current) initialMouthPos.current = bones.mouth.position.clone();
-      if (!initialMouthRot.current) initialMouthRot.current = bones.mouth.rotation.clone();
+    const mouthBone = bones.mouth;
+    if (mouthBone) {
+      if (!initialMouthPos.current) initialMouthPos.current = mouthBone.position.clone();
+      if (!initialMouthRot.current) initialMouthRot.current = mouthBone.rotation.clone();
 
-      const jaw = weights.jawOpen ?? 0;
-      bones.mouth.position.x = initialMouthPos.current.x - jaw * 0.007;
-      bones.mouth.position.y = initialMouthPos.current.y - jaw * 0.009;
-      bones.mouth.rotation.z = initialMouthRot.current.z - jaw * 0.35;
+      const initPos = initialMouthPos.current;
+      const initRot = initialMouthRot.current;
+      if (initPos && initRot) {
+        const jaw = weights["jawOpen"] ?? 0;
+        mouthBone.position.x = initPos.x - jaw * 0.007;
+        mouthBone.position.y = initPos.y - jaw * 0.009;
+        mouthBone.rotation.z = initRot.z - jaw * 0.35;
+      }
 
-      if (bones.lowerLip) {
-        if (!initialLowerLipPos.current) initialLowerLipPos.current = bones.lowerLip.position.clone();
-        bones.lowerLip.position.y = initialLowerLipPos.current.y - jaw * 0.006;
+      const lipBone = bones.lowerLip;
+      if (lipBone) {
+        if (!initialLowerLipPos.current) initialLowerLipPos.current = lipBone.position.clone();
+        const initLipPos = initialLowerLipPos.current;
+        if (initLipPos) {
+          const jaw = weights["jawOpen"] ?? 0;
+          lipBone.position.y = initLipPos.y - jaw * 0.006;
+        }
       }
     }
 
     // Bone-driven eyelids (blinking)
-    const blink = Math.max(weights.eyeBlinkLeft ?? 0, weights.eyeBlinkRight ?? 0);
-    if (bones.upperEyelidL && bones.upperEyelidR) {
-      if (!initialUpperEyelidLPos.current) initialUpperEyelidLPos.current = bones.upperEyelidL.position.clone();
-      if (!initialUpperEyelidRPos.current) initialUpperEyelidRPos.current = bones.upperEyelidR.position.clone();
-      bones.upperEyelidL.position.y = initialUpperEyelidLPos.current.y - blink * 0.009;
-      bones.upperEyelidR.position.y = initialUpperEyelidRPos.current.y - blink * 0.009;
+    const blink = Math.max(weights["eyeBlinkLeft"] ?? 0, weights["eyeBlinkRight"] ?? 0);
+    const ueL = bones.upperEyelidL, ueR = bones.upperEyelidR;
+    if (ueL && ueR) {
+      if (!initialUpperEyelidLPos.current) initialUpperEyelidLPos.current = ueL.position.clone();
+      if (!initialUpperEyelidRPos.current) initialUpperEyelidRPos.current = ueR.position.clone();
+      const initUel = initialUpperEyelidLPos.current;
+      const initUer = initialUpperEyelidRPos.current;
+      if (initUel && initUer) {
+        ueL.position.y = initUel.y - blink * 0.009;
+        ueR.position.y = initUer.y - blink * 0.009;
+      }
     }
-    if (bones.lowerEyelidL && bones.lowerEyelidR) {
-      if (!initialLowerEyelidLPos.current) initialLowerEyelidLPos.current = bones.lowerEyelidL.position.clone();
-      if (!initialLowerEyelidRPos.current) initialLowerEyelidRPos.current = bones.lowerEyelidR.position.clone();
-      bones.lowerEyelidL.position.y = initialLowerEyelidLPos.current.y + blink * 0.004;
-      bones.lowerEyelidR.position.y = initialLowerEyelidRPos.current.y + blink * 0.004;
+    const leL = bones.lowerEyelidL, leR = bones.lowerEyelidR;
+    if (leL && leR) {
+      if (!initialLowerEyelidLPos.current) initialLowerEyelidLPos.current = leL.position.clone();
+      if (!initialLowerEyelidRPos.current) initialLowerEyelidRPos.current = leR.position.clone();
+      const initLel = initialLowerEyelidLPos.current;
+      const initLer = initialLowerEyelidRPos.current;
+      if (initLel && initLer) {
+        leL.position.y = initLel.y + blink * 0.004;
+        leR.position.y = initLer.y + blink * 0.004;
+      }
     }
 
     // Bone-driven eyebrows
-    const browUp = (weights.browInnerUp ?? 0) - (weights.browDownLeft ?? 0);
-    if (bones.browL && bones.browR) {
-      if (!initialBrowLPos.current) initialBrowLPos.current = bones.browL.position.clone();
-      if (!initialBrowRPos.current) initialBrowRPos.current = bones.browR.position.clone();
-      bones.browL.position.y = initialBrowLPos.current.y + browUp * 0.005;
-      bones.browR.position.y = initialBrowRPos.current.y + browUp * 0.005;
+    const browUp = (weights["browInnerUp"] ?? 0) - (weights["browDownLeft"] ?? 0);
+    const bL = bones.browL, bR = bones.browR;
+    if (bL && bR) {
+      if (!initialBrowLPos.current) initialBrowLPos.current = bL.position.clone();
+      if (!initialBrowRPos.current) initialBrowRPos.current = bR.position.clone();
+      const initBl = initialBrowLPos.current;
+      const initBr = initialBrowRPos.current;
+      if (initBl && initBr) {
+        bL.position.y = initBl.y + browUp * 0.005;
+        bR.position.y = initBr.y + browUp * 0.005;
+      }
     }
 
     // 1. Gesture Offsets Calculation
@@ -477,44 +545,51 @@ function RealisticAvatar({
     const amp = active ? 1.35 : 1.0;
     const breath = Math.sin(t * (active ? 1.8 : 1.15)) * 0.013 * amp;
 
-    if (bones.head) {
-      if (!initialHeadRot.current) initialHeadRot.current = bones.head.rotation.clone();
-      if (bones.isBip) {
+    const headBone = bones.head;
+    if (headBone) {
+      if (!initialHeadRot.current) initialHeadRot.current = headBone.rotation.clone();
+      const initHead = initialHeadRot.current;
+      if (bones.isBip && initHead) {
         // Bip001: Z is Up (Yaw), X is Sideways (Pitch), Y is Forward (Roll)
-        bones.head.rotation.x = initialHeadRot.current.x - targetHeadX * 0.6;
-        bones.head.rotation.z = initialHeadRot.current.z + targetHeadY * 0.7;
-        bones.head.rotation.y = initialHeadRot.current.y + gestureHeadRoll * 0.6;
+        headBone.rotation.x = initHead.x - targetHeadX * 0.6;
+        headBone.rotation.z = initHead.z + targetHeadY * 0.7;
+        headBone.rotation.y = initHead.y + gestureHeadRoll * 0.6;
       } else {
-        bones.head.rotation.y += (targetHeadY - bones.head.rotation.y) * 0.06;
-        bones.head.rotation.x += (targetHeadX - bones.head.rotation.x) * 0.06;
-        bones.head.rotation.z += (targetHeadZ - bones.head.rotation.z) * 0.06;
+        headBone.rotation.y += (targetHeadY - headBone.rotation.y) * 0.06;
+        headBone.rotation.x += (targetHeadX - headBone.rotation.x) * 0.06;
+        headBone.rotation.z += (targetHeadZ - headBone.rotation.z) * 0.06;
       }
     }
-    if (bones.neck) {
-      if (!initialNeckRot.current) initialNeckRot.current = bones.neck.rotation.clone();
-      if (bones.isBip) {
-        bones.neck.rotation.x = initialNeckRot.current.x - targetHeadX * 0.25;
-        bones.neck.rotation.z = initialNeckRot.current.z + targetHeadY * 0.25;
+    const neckBone = bones.neck;
+    if (neckBone) {
+      if (!initialNeckRot.current) initialNeckRot.current = neckBone.rotation.clone();
+      const initNeck = initialNeckRot.current;
+      if (bones.isBip && initNeck) {
+        neckBone.rotation.x = initNeck.x - targetHeadX * 0.25;
+        neckBone.rotation.z = initNeck.z + targetHeadY * 0.25;
       } else {
-        bones.neck.rotation.y += (targetHeadY * 0.3 - bones.neck.rotation.y) * 0.05;
-        bones.neck.rotation.x +=
-          (targetHeadX * 0.3 + config.seat.lean * 0.08 + gestureNeckPitch - bones.neck.rotation.x) *
+        neckBone.rotation.y += (targetHeadY * 0.3 - neckBone.rotation.y) * 0.05;
+        neckBone.rotation.x +=
+          (targetHeadX * 0.3 + config.seat.lean * 0.08 + gestureNeckPitch - neckBone.rotation.x) *
           0.05;
-        bones.neck.rotation.z += (targetHeadZ * 0.25 - bones.neck.rotation.z) * 0.05;
+        neckBone.rotation.z += (targetHeadZ * 0.25 - neckBone.rotation.z) * 0.05;
       }
     }
-    if (bones.spine1) {
-      bones.spine1.rotation.x = breath + config.seat.lean * 0.12 + currentSlouch.current;
-      bones.spine1.rotation.z = Math.sin(t * 0.38) * 0.005 * amp + currentLean.current;
-      bones.spine1.rotation.y = currentLean.current * 0.35;
+    const spine1Bone = bones.spine1;
+    if (spine1Bone) {
+      spine1Bone.rotation.x = breath + config.seat.lean * 0.12 + currentSlouch.current;
+      spine1Bone.rotation.z = Math.sin(t * 0.38) * 0.005 * amp + currentLean.current;
+      spine1Bone.rotation.y = currentLean.current * 0.35;
     }
-    if (bones.spine) {
-      bones.spine.rotation.z = currentLean.current * 0.45;
-      bones.spine.rotation.x = currentSlouch.current * 0.5;
+    const spineBone = bones.spine;
+    if (spineBone) {
+      spineBone.rotation.z = currentLean.current * 0.45;
+      spineBone.rotation.x = currentSlouch.current * 0.5;
     }
-    if (bones.leftShoulder && bones.rightShoulder) {
-      bones.leftShoulder.rotation.z = -currentLean.current * 0.35 + breath * 0.006;
-      bones.rightShoulder.rotation.z = currentLean.current * 0.35 - breath * 0.006;
+    const lShoulder = bones.leftShoulder, rShoulder = bones.rightShoulder;
+    if (lShoulder && rShoulder) {
+      lShoulder.rotation.z = -currentLean.current * 0.35 + breath * 0.006;
+      rShoulder.rotation.z = currentLean.current * 0.35 - breath * 0.006;
     }
   });
 
@@ -594,9 +669,9 @@ export default function AvatarFace({
   engine: EmotionEngine;
   gazeRef: { current: string };
   active: boolean;
-  listening?: boolean;
-  headGesture?: string;
-  gestureKey?: number;
+  listening?: boolean | undefined;
+  headGesture?: string | undefined;
+  gestureKey?: number | undefined;
   config: SceneConfig;
 }) {
   return (

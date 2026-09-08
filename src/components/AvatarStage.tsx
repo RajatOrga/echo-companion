@@ -28,9 +28,9 @@ export function AvatarStage({
   engine: EmotionEngine;
   gazeRef: { current: string };
   active: boolean;
-  listening?: boolean;
-  headGesture?: string;
-  gestureKey?: number;
+  listening?: boolean | undefined;
+  headGesture?: string | undefined;
+  gestureKey?: number | undefined;
   config: SceneConfig;
 }) {
   return (
