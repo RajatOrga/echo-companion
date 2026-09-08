@@ -138,7 +138,7 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<TurnResult> {
 }
 
 export const runTurn = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => ChatInput.parse(input))
+  .validator((input: unknown) => ChatInput.parse(input))
   .handler(({ data }) => chat(data));
 
 const SpeakInput = z.object({
@@ -149,7 +149,7 @@ const SpeakInput = z.object({
 });
 
 export const speak = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => SpeakInput.parse(input))
+  .validator((input: unknown) => SpeakInput.parse(input))
   .handler(async ({ data }): Promise<{ audio: string; mimeType: string }> => {
     let res: Response;
     if (data.ttsProvider === "elevenlabs") {
@@ -161,6 +161,12 @@ export const speak = createServerFn({ method: "POST" })
           body: JSON.stringify({
             text: data.text,
             model_id: "eleven_turbo_v2_5",
+            voice_settings: {
+              stability: 0.45,
+              similarity_boost: 0.85,
+              style: 0.35,
+              use_speaker_boost: true,
+            },
           }),
         },
       );
@@ -169,7 +175,7 @@ export const speak = createServerFn({ method: "POST" })
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${data.ttsKey}` },
         body: JSON.stringify({
-          model: "gpt-4o-mini-tts",
+          model: "tts-1",
           input: data.text,
           voice: data.voice,
           response_format: "mp3",
@@ -191,7 +197,7 @@ const TestInput = ChatInput.pick({
 });
 
 export const testConnection = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => TestInput.parse(input))
+  .validator((input: unknown) => TestInput.parse(input))
   .handler(async ({ data }): Promise<{ ok: true; sample: string }> => {
     const result = await chat({
       ...data,

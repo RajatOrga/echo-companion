@@ -56,8 +56,12 @@ function SettingsPage() {
             label="Voice"
             value={
               settings?.ttsProvider === "none"
-                ? "Browser voice"
-                : `${settings?.ttsProvider ?? "—"} · ${settings?.voice ?? ""}`
+                ? "Browser voice (section-tuned)"
+                : `${settings?.ttsProvider === "elevenlabs" ? "ElevenLabs" : "OpenAI"} · ${
+                    settings?.voice === "auto" || !settings?.voice
+                      ? "Auto (Section-tuned)"
+                      : settings?.voice
+                  }`
             }
           />
           <Row label="Account" value={user?.email ?? "Signed out (this device only)"} />

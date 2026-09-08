@@ -13,7 +13,7 @@ import { useVoiceOutput } from "@/hooks/useVoiceOutput";
 import { useAuth } from "@/hooks/useAuth";
 import { runTurn, speak as speakFnServer } from "@/lib/ai.functions";
 import { EmotionEngine, isEmotionName } from "@/lib/emotion";
-import { hasKey, loadSettings, type KeySettings } from "@/lib/keys";
+import { getVoiceForMode, hasKey, loadSettings, type KeySettings } from "@/lib/keys";
 import { getMode, REPLY_CONTRACT } from "@/lib/modes";
 import { getScene } from "@/lib/scenes";
 import { supabase } from "@/integrations/supabase/client";
@@ -177,7 +177,11 @@ function TalkPage() {
 
         setBusy(false);
         setSpeaking(true);
-        await speak(result.reply, settings);
+        const activeVoice = getVoiceForMode(settings, mode);
+        await speak(result.reply, settings, {
+          voice: activeVoice,
+          browser: mode.voice.browser,
+        });
         setSpeaking(false);
         engineRef.current.settle(0.2);
         gazeRef.current = "user";

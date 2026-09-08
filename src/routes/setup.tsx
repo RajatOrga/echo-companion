@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { testConnection } from "@/lib/ai.functions";
 import {
   DEFAULT_MODELS,
+  ELEVENLABS_VOICES,
+  OPENAI_VOICES,
   loadSettings,
   saveSettings,
   type KeySettings,
@@ -191,19 +193,43 @@ function SetupPage() {
                   value={settings.ttsKey}
                   onChange={(event) => update({ ttsKey: event.target.value })}
                   autoComplete="off"
+                  placeholder={settings.ttsProvider === "elevenlabs" ? "xi-api-key..." : "sk-..."}
                   className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
                 />
               </Field>
-              <Field
-                label={settings.ttsProvider === "elevenlabs" ? "Voice ID" : "Voice name"}
-              >
-                <input
-                  value={settings.voice}
-                  onChange={(event) => update({ voice: event.target.value })}
-                  placeholder={settings.ttsProvider === "elevenlabs" ? "21m00Tcm..." : "alloy"}
-                  className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
-                />
-              </Field>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Voice Preset
+                </label>
+                <div className="grid gap-2">
+                  <select
+                    value={settings.voice || "auto"}
+                    onChange={(event) => update({ voice: event.target.value })}
+                    className="w-full rounded-xl border border-input bg-card px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+                  >
+                    {(settings.ttsProvider === "elevenlabs" ? ELEVENLABS_VOICES : OPENAI_VOICES).map(
+                      (v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name} — {v.description}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  {settings.ttsProvider === "elevenlabs" ? (
+                    <input
+                      value={settings.voice === "auto" ? "" : settings.voice}
+                      onChange={(event) => update({ voice: event.target.value || "auto" })}
+                      placeholder="Or enter custom ElevenLabs Voice ID (optional)"
+                      className="w-full rounded-xl border border-input bg-card/60 px-4 py-2.5 text-xs outline-none transition-colors duration-300 focus:border-primary/60"
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {settings.voice === "auto" || !settings.voice
+                    ? "✨ Auto selects the ideal voice for each section (Interview, Casual, Companionship, etc.)."
+                    : "Using this specific voice across all conversation modes."}
+                </p>
+              </div>
             </>
           ) : null}
         </div>

@@ -13,6 +13,14 @@ function base64ToBytes(base64: string) {
   return bytes;
 }
 
+export type VoiceOptions = {
+  voice?: string;
+  browser?: {
+    rate: number;
+    pitch: number;
+  };
+};
+
 /**
  * Speaks a reply and drives the mouth from the loudness of the audio.
  * Falls back to the browser's own voice when no voice key is configured.
@@ -33,7 +41,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
   useEffect(() => cleanup, [cleanup]);
 
   const browserVoice = useCallback(
-    (text: string) =>
+    (text: string, options?: { rate?: number; pitch?: number }) =>
       new Promise<void>((resolve) => {
         if (typeof window === "undefined" || !window.speechSynthesis) {
           resolve();
@@ -41,8 +49,25 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         }
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.98;
-        utterance.pitch = 1.02;
+        utterance.rate = options?.rate ?? 0.98;
+        utterance.pitch = options?.pitch ?? 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        // Prefer natural / high-quality English voices
+        const naturalVoice =
+          voices.find(
+            (v) =>
+              v.lang.startsWith("en") &&
+              (v.name.includes("Natural") ||
+                v.name.includes("Online") ||
+                v.name.includes("Google") ||
+                v.name.includes("Premium") ||
+                v.name.includes("Samantha") ||
+                v.name.includes("Daniel") ||
+                v.name.includes("Aria")),
+          ) ?? voices.find((v) => v.lang.startsWith("en"));
+        if (naturalVoice) utterance.voice = naturalVoice;
+
         // No audio graph available for browser speech: fake a natural mouth rhythm.
         let t = 0;
         const tick = () => {
@@ -65,18 +90,19 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
   );
 
   const speak = useCallback(
-    async (text: string, settings: KeySettings) => {
+    async (text: string, settings: KeySettings, options?: VoiceOptions) => {
       cleanup();
       if (settings.ttsProvider === "none" || !settings.ttsKey.trim()) {
-        await browserVoice(text);
+        await browserVoice(text, options?.browser);
         return;
       }
       try {
+        const voice = options?.voice || (settings.voice !== "auto" ? settings.voice : "alloy");
         const { audio } = await speakFn({
           data: {
             ttsProvider: settings.ttsProvider,
             ttsKey: settings.ttsKey,
-            voice: settings.voice || "alloy",
+            voice,
             text,
           },
         });
@@ -120,7 +146,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
           rafRef.current = requestAnimationFrame(tick);
         });
       } catch {
-        await browserVoice(text);
+        await browserVoice(text, options?.browser);
       }
     },
     [browserVoice, cleanup, engine, speakFn],
