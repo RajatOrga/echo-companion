@@ -81,18 +81,27 @@ function RealisticAvatar({
 
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         for (const m of materials) {
-          if (m && "roughness" in m) {
-            const mat = m as THREE.MeshStandardMaterial;
+          if (m) {
             const name = mesh.name.toLowerCase();
-            if (name.includes("outfit") || name.includes("hair") || name.includes("top") || name.includes("bottom")) {
-              mat.roughness = 0.88;
-              mat.metalness = 0.02;
-            } else if (name.includes("skin") || name.includes("head") || name.includes("body")) {
-              mat.roughness = 0.62;
-              mat.metalness = 0.0;
-            } else if (!name.includes("eye")) {
-              mat.roughness = Math.max(mat.roughness ?? 0.7, 0.65);
-              mat.metalness = Math.min(mat.metalness ?? 0, 0.1);
+            if ("map" in m && m.map) {
+              m.transparent = true;
+              m.depthWrite = true;
+              if (name.includes("jiemao") || name.includes("hair") || name.includes("gaoguang")) {
+                m.alphaTest = 0.35;
+              }
+            }
+            if ("roughness" in m) {
+              const mat = m as THREE.MeshStandardMaterial;
+              if (name.includes("outfit") || name.includes("hair") || name.includes("top") || name.includes("bottom")) {
+                mat.roughness = 0.88;
+                mat.metalness = 0.02;
+              } else if (name.includes("skin") || name.includes("head") || name.includes("body") || name.includes("face")) {
+                mat.roughness = 0.62;
+                mat.metalness = 0.0;
+              } else if (!name.includes("eye")) {
+                mat.roughness = Math.max(mat.roughness ?? 0.7, 0.65);
+                mat.metalness = Math.min(mat.metalness ?? 0, 0.1);
+              }
             }
           }
         }
@@ -115,7 +124,7 @@ function RealisticAvatar({
   }, [avatar]);
 
   // Locate skeletal bones for posing and lifelike head movement across rigs
-  // (ReadyPlayerMe, Daz Genesis 3/8/8.1/9, Mixamo, Unreal)
+  // (ReadyPlayerMe, Daz Genesis 3/8/8.1/9, Mixamo, Unreal, 3ds Max Bip001)
   const bones = useMemo(() => {
     let head: THREE.Bone | null = null;
     let neck: THREE.Bone | null = null;
@@ -125,45 +134,50 @@ function RealisticAvatar({
     let rightShoulder: THREE.Bone | null = null;
     let leftArm: THREE.Bone | null = null;
     let rightArm: THREE.Bone | null = null;
+    let mouth: THREE.Bone | null = null;
 
     avatar.traverse((child) => {
       if (child.type === "Bone") {
         const n = child.name.toLowerCase();
         // Head bone
-        if (!head && (n === "head" || n.endsWith("_head") || n.includes("mixamorighead") || n.includes("genesis8_head") || n.includes("genesis9_head"))) {
+        if (!head && (n === "head" || n.endsWith("_head") || n.includes("mixamorighead") || n.includes("genesis8_head") || n.includes("genesis9_head") || n.includes("head_"))) {
           head = child as THREE.Bone;
         }
         // Neck bone
-        else if (!neck && (n === "neck" || n === "neckupper" || n === "necklower" || n.endsWith("_neck") || n.includes("mixamorigneck"))) {
+        else if (!neck && (n === "neck" || n === "neckupper" || n === "necklower" || n.endsWith("_neck") || n.includes("mixamorigneck") || n.includes("neck_"))) {
           neck = child as THREE.Bone;
         }
         // Lower Spine / Abdomen
-        else if (!spine && (n === "spine" || n === "abdomenlower" || n === "abdomen" || n.includes("mixamorigspine"))) {
+        else if (!spine && (n === "spine" || n === "abdomenlower" || n === "abdomen" || n.includes("mixamorigspine") || n.includes("spine_06") || n.includes("spine_05"))) {
           spine = child as THREE.Bone;
         }
         // Upper Spine / Chest
-        else if (!spine1 && (n === "spine1" || n === "spine2" || n === "chest" || n === "chestupper" || n.includes("mixamorigspine1") || n.includes("mixamorigspine2"))) {
+        else if (!spine1 && (n === "spine1" || n === "spine2" || n === "chest" || n === "chestupper" || n.includes("mixamorigspine1") || n.includes("mixamorigspine2") || n.includes("spine1_") || n.includes("spine2_"))) {
           spine1 = child as THREE.Bone;
         }
         // Left Shoulder / Clavicle
-        else if (!leftShoulder && (n === "leftshoulder" || n === "lshldr" || n === "lcollar" || n.includes("mixamorigleftshoulder"))) {
+        else if (!leftShoulder && (n === "leftshoulder" || n === "lshldr" || n === "lcollar" || n.includes("mixamorigleftshoulder") || (n.includes("clavicle") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))))) {
           leftShoulder = child as THREE.Bone;
         }
         // Right Shoulder / Clavicle
-        else if (!rightShoulder && (n === "rightshoulder" || n === "rshldr" || n === "rcollar" || n.includes("mixamorigrightshoulder"))) {
+        else if (!rightShoulder && (n === "rightshoulder" || n === "rshldr" || n === "rcollar" || n.includes("mixamorigrightshoulder") || (n.includes("clavicle") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))))) {
           rightShoulder = child as THREE.Bone;
         }
         // Left Arm / Upper Arm
-        else if (!leftArm && (n === "leftarm" || n === "lshldrbend" || n === "lupperarm" || n.includes("mixamorigleftarm"))) {
+        else if (!leftArm && (n === "leftarm" || n === "lshldrbend" || n === "lupperarm" || n.includes("mixamorigleftarm") || (n.includes("upperarm") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))))) {
           leftArm = child as THREE.Bone;
         }
         // Right Arm / Upper Arm
-        else if (!rightArm && (n === "rightarm" || n === "rshldrbend" || n === "rupperarm" || n.includes("mixamorigrightarm"))) {
+        else if (!rightArm && (n === "rightarm" || n === "rshldrbend" || n === "rupperarm" || n.includes("mixamorigrightarm") || (n.includes("upperarm") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))))) {
           rightArm = child as THREE.Bone;
+        }
+        // Mouth / Jaw joint (for bone-based facial rigs like mint.glb)
+        else if (!mouth && (n.includes("mouth") || n.includes("jaw"))) {
+          mouth = child as THREE.Bone;
         }
       }
     });
-    return { head, neck, spine, spine1, leftShoulder, rightShoulder, leftArm, rightArm };
+    return { head, neck, spine, spine1, leftShoulder, rightShoulder, leftArm, rightArm, mouth };
   }, [avatar]);
 
   // Natural seated pose setup
@@ -172,6 +186,9 @@ function RealisticAvatar({
       if (child.type === "Bone") {
         const bone = child as THREE.Bone;
         const n = bone.name.toLowerCase();
+        // Skip Bip001 models (mint.glb) as their arms already rest naturally in a downward A-pose
+        if (n.includes("bip001")) return;
+
         if (n === "leftarm" || n === "lshldrbend" || n === "lupperarm" || n.includes("mixamorigleftarm")) {
           bone.rotation.set(1.31, 0.19, 0.12);
         } else if (n === "rightarm" || n === "rshldrbend" || n === "rupperarm" || n.includes("mixamorigrightarm")) {
@@ -199,6 +216,7 @@ function RealisticAvatar({
   });
 
   const lastGestureTrigger = useRef<number | undefined>(undefined);
+  const initialMouthZ = useRef<number | null>(null);
   const listeningNodTimer = useRef<number>(4.0 + Math.random() * 3.0);
   const postureShiftTimer = useRef<number>(8.0 + Math.random() * 6.0);
   const currentLean = useRef<number>(0);
@@ -262,6 +280,15 @@ function RealisticAvatar({
       if (visemeO !== undefined) {
         influences[visemeO] = Math.min(jaw * 0.45, 1);
       }
+    }
+
+    // Drive bone-based jaw / mouth movement if present (e.g. mint.glb)
+    if (bones.mouth) {
+      if (initialMouthZ.current === null) {
+        initialMouthZ.current = bones.mouth.rotation.z;
+      }
+      const jaw = weights.jawOpen ?? 0;
+      bones.mouth.rotation.z = initialMouthZ.current - jaw * 0.28;
     }
 
     // 1. Gesture Offsets Calculation

@@ -44,7 +44,7 @@ const BEDROOM: SceneConfig = {
   wall: "#2b2733",
   key: "#ffc98a",
   fill: "#6c6f9c",
-  avatar: "/models/avatars/companion_female.glb",
+  avatar: "/models/avatars/mint.glb",
   props: [
     wallRow("wall", -2.85),
     wallRow("wallWindow", -0.95),
@@ -107,6 +107,7 @@ export function getScene(mode: string): SceneConfig {
 
 export const AVATAR_MODELS = [
   "/models/avatars/companion_female.glb",
+  "/models/avatars/mint.glb",
   "/models/avatars/aurora.glb",
   "/models/avatars/celeste.glb",
   "/models/avatars/interviewer_male.glb",

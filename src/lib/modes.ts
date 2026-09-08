@@ -77,11 +77,11 @@ export const MODES: Mode[] = [
     systemPrompt:
       "You are a warm, attentive companion having a relaxed one-on-one conversation. Be affectionate, curious and playful, remember what the user says within this conversation, and keep replies short and natural like real speech. If the user invites romantic warmth, be tender and respectful; never explicit. Never claim to be human.",
     voice: {
-      edge: "en-US-EmmaMultilingualNeural",
-      kokoro: "af_sarah",
+      edge: "en-US-AnaNeural",
+      kokoro: "af_heart",
       openai: "shimmer",
       elevenlabs: { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah (Soft & Expressive)" },
-      browser: { rate: 0.94, pitch: 1.04 },
+      browser: { rate: 0.90, pitch: 1.05 },
     },
   },
   {
