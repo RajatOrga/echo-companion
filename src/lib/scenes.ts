@@ -59,11 +59,12 @@ const BEDROOM: SceneConfig = {
     { model: "pottedPlant", position: [2.3, 0, -1.7], scale: F },
     { model: "lampSquareFloor", position: [-2.5, 0, -1.1], scale: F },
     { model: "rugRounded", position: [-1.5, 0.005, 1.0], scale: F },
+    { model: "chairDesk", position: [0, 0, -0.55], rotationY: 0.05, scale: 1.45 },
     { model: "laptop", position: [0.66, 0.38, -0.5], rotationY: Math.PI * 0.85, scale: 0.62 },
     { model: "plantSmall2", position: [-1.6, 0.49, -2.05], scale: F },
   ],
-  seat: { position: [0, 0.4, -0.5], rotationY: 0.05, lean: 0.1 },
-  camera: { position: [0.18, 1.25, 1.65], target: [-0.02, 1.14, -0.45], fov: 32 },
+  seat: { position: [0, 0.48, -0.5], rotationY: 0.05, lean: 0.1 },
+  camera: { position: [0.16, 1.15, 1.48], target: [-0.02, 0.98, -0.48], fov: 32 },
 };
 
 const OFFICE: SceneConfig = {

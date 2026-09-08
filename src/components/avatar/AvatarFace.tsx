@@ -2,6 +2,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Environment, Lightformer } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import type { EmotionEngine } from "@/lib/emotion";
 import { Room } from "@/components/avatar/Room";
@@ -68,7 +69,8 @@ function RealisticAvatar({
 }) {
   const modelUrl = config.avatar || "/models/avatars/companion_female.glb";
   const { scene } = useGLTF(modelUrl);
-  const avatar = useMemo(() => scene.clone(true), [scene]);
+  // SkeletonUtils.clone ensures SkinnedMesh and bones rebind correctly
+  const avatar = useMemo(() => SkeletonUtils.clone(scene), [scene]);
 
   // Find all skinned meshes with morph targets
   const morphTargets = useMemo<Targets[]>(() => {
@@ -123,7 +125,7 @@ function RealisticAvatar({
     return found;
   }, [avatar]);
 
-  // Locate skeletal bones for posing and lifelike head movement across rigs
+  // Locate skeletal bones for posing and lifelike head/face movement across rigs
   // (ReadyPlayerMe, Daz Genesis 3/8/8.1/9, Mixamo, Unreal, 3ds Max Bip001)
   const bones = useMemo(() => {
     let head: THREE.Bone | null = null;
@@ -134,17 +136,35 @@ function RealisticAvatar({
     let rightShoulder: THREE.Bone | null = null;
     let leftArm: THREE.Bone | null = null;
     let rightArm: THREE.Bone | null = null;
+    let leftForearm: THREE.Bone | null = null;
+    let rightForearm: THREE.Bone | null = null;
+    let leftThigh: THREE.Bone | null = null;
+    let rightThigh: THREE.Bone | null = null;
+    let leftCalf: THREE.Bone | null = null;
+    let rightCalf: THREE.Bone | null = null;
     let mouth: THREE.Bone | null = null;
+    let lowerLip: THREE.Bone | null = null;
+    let upperEyelidL: THREE.Bone | null = null;
+    let upperEyelidR: THREE.Bone | null = null;
+    let lowerEyelidL: THREE.Bone | null = null;
+    let lowerEyelidR: THREE.Bone | null = null;
+    let browL: THREE.Bone | null = null;
+    let browR: THREE.Bone | null = null;
+    let eyeballL: THREE.Bone | null = null;
+    let eyeballR: THREE.Bone | null = null;
+    let isBip = false;
 
     avatar.traverse((child) => {
       if (child.type === "Bone") {
         const n = child.name.toLowerCase();
+        if (n.includes("bip001")) isBip = true;
+
         // Head bone
-        if (!head && (n === "head" || n.endsWith("_head") || n.includes("mixamorighead") || n.includes("genesis8_head") || n.includes("genesis9_head") || n.includes("head_"))) {
+        if (!head && (n === "head" || n.endsWith("_head") || n.includes("mixamorighead") || n.includes("genesis8_head") || n.includes("genesis9_head") || n.includes("head_076") || (n.includes("head") && !n.includes("end")))) {
           head = child as THREE.Bone;
         }
         // Neck bone
-        else if (!neck && (n === "neck" || n === "neckupper" || n === "necklower" || n.endsWith("_neck") || n.includes("mixamorigneck") || n.includes("neck_"))) {
+        else if (!neck && (n === "neck" || n === "neckupper" || n === "necklower" || n.endsWith("_neck") || n.includes("mixamorigneck") || n.includes("neck_075") || (n.includes("neck") && !n.includes("end")))) {
           neck = child as THREE.Bone;
         }
         // Lower Spine / Abdomen
@@ -152,55 +172,112 @@ function RealisticAvatar({
           spine = child as THREE.Bone;
         }
         // Upper Spine / Chest
-        else if (!spine1 && (n === "spine1" || n === "spine2" || n === "chest" || n === "chestupper" || n.includes("mixamorigspine1") || n.includes("mixamorigspine2") || n.includes("spine1_") || n.includes("spine2_"))) {
+        else if (!spine1 && (n === "spine1" || n === "spine2" || n === "chest" || n === "chestupper" || n.includes("mixamorigspine1") || n.includes("mixamorigspine2") || n.includes("spine1_07") || n.includes("spine2_08"))) {
           spine1 = child as THREE.Bone;
         }
-        // Left Shoulder / Clavicle
+        // Shoulders / Clavicles
         else if (!leftShoulder && (n === "leftshoulder" || n === "lshldr" || n === "lcollar" || n.includes("mixamorigleftshoulder") || (n.includes("clavicle") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))))) {
           leftShoulder = child as THREE.Bone;
         }
-        // Right Shoulder / Clavicle
         else if (!rightShoulder && (n === "rightshoulder" || n === "rshldr" || n === "rcollar" || n.includes("mixamorigrightshoulder") || (n.includes("clavicle") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))))) {
           rightShoulder = child as THREE.Bone;
         }
-        // Left Arm / Upper Arm
+        // Upper Arms
         else if (!leftArm && (n === "leftarm" || n === "lshldrbend" || n === "lupperarm" || n.includes("mixamorigleftarm") || (n.includes("upperarm") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))))) {
           leftArm = child as THREE.Bone;
         }
-        // Right Arm / Upper Arm
         else if (!rightArm && (n === "rightarm" || n === "rshldrbend" || n === "rupperarm" || n.includes("mixamorigrightarm") || (n.includes("upperarm") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))))) {
           rightArm = child as THREE.Bone;
         }
-        // Mouth / Jaw joint (for bone-based facial rigs like mint.glb)
+        // Forearms
+        else if (!leftForearm && (n === "leftforearm" || n === "lforearmbend" || n.includes("mixamorigleftforearm") || (n.includes("forearm") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))))) {
+          leftForearm = child as THREE.Bone;
+        }
+        else if (!rightForearm && (n === "rightforearm" || n === "rforearmbend" || n.includes("mixamorigrightforearm") || (n.includes("forearm") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))))) {
+          rightForearm = child as THREE.Bone;
+        }
+        // Thighs
+        else if (!leftThigh && ((n.includes("thigh") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))) || n.includes("leftupleg"))) {
+          leftThigh = child as THREE.Bone;
+        }
+        else if (!rightThigh && ((n.includes("thigh") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))) || n.includes("rightupleg"))) {
+          rightThigh = child as THREE.Bone;
+        }
+        // Calves
+        else if (!leftCalf && ((n.includes("calf") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))) || n.includes("leftleg"))) {
+          leftCalf = child as THREE.Bone;
+        }
+        else if (!rightCalf && ((n.includes("calf") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))) || n.includes("rightleg"))) {
+          rightCalf = child as THREE.Bone;
+        }
+        // Face joints
         else if (!mouth && (n.includes("mouth") || n.includes("jaw"))) {
           mouth = child as THREE.Bone;
         }
-      }
-    });
-    return { head, neck, spine, spine1, leftShoulder, rightShoulder, leftArm, rightArm, mouth };
-  }, [avatar]);
-
-  // Natural seated pose setup
-  useEffect(() => {
-    avatar.traverse((child) => {
-      if (child.type === "Bone") {
-        const bone = child as THREE.Bone;
-        const n = bone.name.toLowerCase();
-        // Skip Bip001 models (mint.glb) as their arms already rest naturally in a downward A-pose
-        if (n.includes("bip001")) return;
-
-        if (n === "leftarm" || n === "lshldrbend" || n === "lupperarm" || n.includes("mixamorigleftarm")) {
-          bone.rotation.set(1.31, 0.19, 0.12);
-        } else if (n === "rightarm" || n === "rshldrbend" || n === "rupperarm" || n.includes("mixamorigrightarm")) {
-          bone.rotation.set(1.31, -0.19, -0.12);
-        } else if (n === "leftforearm" || n === "lforearmbend" || n.includes("mixamorigleftforearm")) {
-          bone.rotation.set(0.18, 0.12, 0.38);
-        } else if (n === "rightforearm" || n === "rforearmbend" || n.includes("mixamorigrightforearm")) {
-          bone.rotation.set(0.18, -0.12, -0.38);
+        else if (!lowerLip && n.includes("lolip_m")) {
+          lowerLip = child as THREE.Bone;
+        }
+        else if (!upperEyelidL && (n.includes("eyelid_up_l") || n.includes("eyelid04_up_l") || n.includes("eyelid05_up_l"))) {
+          upperEyelidL = child as THREE.Bone;
+        }
+        else if (!upperEyelidR && (n.includes("eyelid_up_r") || n.includes("eyelid04_up_r") || n.includes("eyelid05_up_r"))) {
+          upperEyelidR = child as THREE.Bone;
+        }
+        else if (!lowerEyelidL && (n.includes("eyelid_lo_l") || n.includes("eyelid02_lo_l") || n.includes("eyelid03_lo_l"))) {
+          lowerEyelidL = child as THREE.Bone;
+        }
+        else if (!lowerEyelidR && (n.includes("eyelid_lo_r") || n.includes("eyelid02_lo_r") || n.includes("eyelid03_lo_r"))) {
+          lowerEyelidR = child as THREE.Bone;
+        }
+        else if (!browL && (n.includes("eyebrow01_l") || n.includes("eyebrow_l"))) {
+          browL = child as THREE.Bone;
+        }
+        else if (!browR && (n.includes("eyebrow01_r") || n.includes("eyebrow_r"))) {
+          browR = child as THREE.Bone;
+        }
+        else if (!eyeballL && (n.includes("eyeball_l") || n.includes("eye_l"))) {
+          eyeballL = child as THREE.Bone;
+        }
+        else if (!eyeballR && (n.includes("eyeball_r") || n.includes("eye_r"))) {
+          eyeballR = child as THREE.Bone;
         }
       }
     });
+    return {
+      head, neck, spine, spine1, leftShoulder, rightShoulder,
+      leftArm, rightArm, leftForearm, rightForearm,
+      leftThigh, rightThigh, leftCalf, rightCalf,
+      mouth, lowerLip, upperEyelidL, upperEyelidR, lowerEyelidL, lowerEyelidR,
+      browL, browR, eyeballL, eyeballR, isBip
+    };
   }, [avatar]);
+
+  // Seated pose setup: bends thighs & knees to sit on the chair, rests arms on lap
+  useEffect(() => {
+    if (bones.isBip) {
+      // 1. Pose legs to sit comfortably on chair
+      if (bones.leftThigh) bones.leftThigh.rotation.set(-Math.PI, 0, (179.6 - 82) * (Math.PI / 180));
+      if (bones.rightThigh) bones.rightThigh.rotation.set(-Math.PI, 0, (179.6 - 82) * (Math.PI / 180));
+      if (bones.leftCalf) bones.leftCalf.rotation.set(0, 0, (-2.3 + 86) * (Math.PI / 180));
+      if (bones.rightCalf) bones.rightCalf.rotation.set(0, 0, (-2.3 + 86) * (Math.PI / 180));
+
+      // 2. Pose arms to rest naturally on lap instead of locked in A-pose
+      if (bones.leftArm) bones.leftArm.rotation.set(5.1 * (Math.PI / 180), 20 * (Math.PI / 180), -42 * (Math.PI / 180));
+      if (bones.rightArm) bones.rightArm.rotation.set(-5.1 * (Math.PI / 180), -20 * (Math.PI / 180), -42 * (Math.PI / 180));
+      if (bones.leftForearm) bones.leftForearm.rotation.set(0, 15 * (Math.PI / 180), 28 * (Math.PI / 180));
+      if (bones.rightForearm) bones.rightForearm.rotation.set(0, -15 * (Math.PI / 180), 28 * (Math.PI / 180));
+    } else {
+      // Standard rigs (Mixamo / ReadyPlayerMe / Daz Genesis)
+      if (bones.leftArm) bones.leftArm.rotation.set(1.31, 0.19, 0.12);
+      if (bones.rightArm) bones.rightArm.rotation.set(1.31, -0.19, -0.12);
+      if (bones.leftForearm) bones.leftForearm.rotation.set(0.18, 0.12, 0.38);
+      if (bones.rightForearm) bones.rightForearm.rotation.set(0.18, -0.12, -0.38);
+      if (bones.leftThigh) bones.leftThigh.rotation.set(1.48, 0.1, 0.08);
+      if (bones.rightThigh) bones.rightThigh.rotation.set(1.48, -0.1, -0.08);
+      if (bones.leftCalf) bones.leftCalf.rotation.set(-1.42, 0, 0);
+      if (bones.rightCalf) bones.rightCalf.rotation.set(-1.42, 0, 0);
+    }
+  }, [bones]);
 
   // Gesture state management
   const gestureState = useRef<{
@@ -216,7 +293,17 @@ function RealisticAvatar({
   });
 
   const lastGestureTrigger = useRef<number | undefined>(undefined);
-  const initialMouthZ = useRef<number | null>(null);
+  const initialHeadRot = useRef<THREE.Euler | null>(null);
+  const initialNeckRot = useRef<THREE.Euler | null>(null);
+  const initialMouthPos = useRef<THREE.Vector3 | null>(null);
+  const initialMouthRot = useRef<THREE.Euler | null>(null);
+  const initialLowerLipPos = useRef<THREE.Vector3 | null>(null);
+  const initialUpperEyelidLPos = useRef<THREE.Vector3 | null>(null);
+  const initialUpperEyelidRPos = useRef<THREE.Vector3 | null>(null);
+  const initialLowerEyelidLPos = useRef<THREE.Vector3 | null>(null);
+  const initialLowerEyelidRPos = useRef<THREE.Vector3 | null>(null);
+  const initialBrowLPos = useRef<THREE.Vector3 | null>(null);
+  const initialBrowRPos = useRef<THREE.Vector3 | null>(null);
   const listeningNodTimer = useRef<number>(4.0 + Math.random() * 3.0);
   const postureShiftTimer = useRef<number>(8.0 + Math.random() * 6.0);
   const currentLean = useRef<number>(0);
@@ -282,13 +369,44 @@ function RealisticAvatar({
       }
     }
 
-    // Drive bone-based jaw / mouth movement if present (e.g. mint.glb)
+    // Bone-driven jaw & mouth opening (lip-sync for mint.glb / skeletal rigs)
     if (bones.mouth) {
-      if (initialMouthZ.current === null) {
-        initialMouthZ.current = bones.mouth.rotation.z;
-      }
+      if (!initialMouthPos.current) initialMouthPos.current = bones.mouth.position.clone();
+      if (!initialMouthRot.current) initialMouthRot.current = bones.mouth.rotation.clone();
+
       const jaw = weights.jawOpen ?? 0;
-      bones.mouth.rotation.z = initialMouthZ.current - jaw * 0.28;
+      bones.mouth.position.x = initialMouthPos.current.x - jaw * 0.007;
+      bones.mouth.position.y = initialMouthPos.current.y - jaw * 0.009;
+      bones.mouth.rotation.z = initialMouthRot.current.z - jaw * 0.35;
+
+      if (bones.lowerLip) {
+        if (!initialLowerLipPos.current) initialLowerLipPos.current = bones.lowerLip.position.clone();
+        bones.lowerLip.position.y = initialLowerLipPos.current.y - jaw * 0.006;
+      }
+    }
+
+    // Bone-driven eyelids (blinking)
+    const blink = Math.max(weights.eyeBlinkLeft ?? 0, weights.eyeBlinkRight ?? 0);
+    if (bones.upperEyelidL && bones.upperEyelidR) {
+      if (!initialUpperEyelidLPos.current) initialUpperEyelidLPos.current = bones.upperEyelidL.position.clone();
+      if (!initialUpperEyelidRPos.current) initialUpperEyelidRPos.current = bones.upperEyelidR.position.clone();
+      bones.upperEyelidL.position.y = initialUpperEyelidLPos.current.y - blink * 0.009;
+      bones.upperEyelidR.position.y = initialUpperEyelidRPos.current.y - blink * 0.009;
+    }
+    if (bones.lowerEyelidL && bones.lowerEyelidR) {
+      if (!initialLowerEyelidLPos.current) initialLowerEyelidLPos.current = bones.lowerEyelidL.position.clone();
+      if (!initialLowerEyelidRPos.current) initialLowerEyelidRPos.current = bones.lowerEyelidR.position.clone();
+      bones.lowerEyelidL.position.y = initialLowerEyelidLPos.current.y + blink * 0.004;
+      bones.lowerEyelidR.position.y = initialLowerEyelidRPos.current.y + blink * 0.004;
+    }
+
+    // Bone-driven eyebrows
+    const browUp = (weights.browInnerUp ?? 0) - (weights.browDownLeft ?? 0);
+    if (bones.browL && bones.browR) {
+      if (!initialBrowLPos.current) initialBrowLPos.current = bones.browL.position.clone();
+      if (!initialBrowRPos.current) initialBrowRPos.current = bones.browR.position.clone();
+      bones.browL.position.y = initialBrowLPos.current.y + browUp * 0.005;
+      bones.browR.position.y = initialBrowRPos.current.y + browUp * 0.005;
     }
 
     // 1. Gesture Offsets Calculation
@@ -360,16 +478,30 @@ function RealisticAvatar({
     const breath = Math.sin(t * (active ? 1.8 : 1.15)) * 0.013 * amp;
 
     if (bones.head) {
-      bones.head.rotation.y += (targetHeadY - bones.head.rotation.y) * 0.06;
-      bones.head.rotation.x += (targetHeadX - bones.head.rotation.x) * 0.06;
-      bones.head.rotation.z += (targetHeadZ - bones.head.rotation.z) * 0.06;
+      if (!initialHeadRot.current) initialHeadRot.current = bones.head.rotation.clone();
+      if (bones.isBip) {
+        // Bip001: Z is Up (Yaw), X is Sideways (Pitch), Y is Forward (Roll)
+        bones.head.rotation.x = initialHeadRot.current.x - targetHeadX * 0.6;
+        bones.head.rotation.z = initialHeadRot.current.z + targetHeadY * 0.7;
+        bones.head.rotation.y = initialHeadRot.current.y + gestureHeadRoll * 0.6;
+      } else {
+        bones.head.rotation.y += (targetHeadY - bones.head.rotation.y) * 0.06;
+        bones.head.rotation.x += (targetHeadX - bones.head.rotation.x) * 0.06;
+        bones.head.rotation.z += (targetHeadZ - bones.head.rotation.z) * 0.06;
+      }
     }
     if (bones.neck) {
-      bones.neck.rotation.y += (targetHeadY * 0.3 - bones.neck.rotation.y) * 0.05;
-      bones.neck.rotation.x +=
-        (targetHeadX * 0.3 + config.seat.lean * 0.08 + gestureNeckPitch - bones.neck.rotation.x) *
-        0.05;
-      bones.neck.rotation.z += (targetHeadZ * 0.25 - bones.neck.rotation.z) * 0.05;
+      if (!initialNeckRot.current) initialNeckRot.current = bones.neck.rotation.clone();
+      if (bones.isBip) {
+        bones.neck.rotation.x = initialNeckRot.current.x - targetHeadX * 0.25;
+        bones.neck.rotation.z = initialNeckRot.current.z + targetHeadY * 0.25;
+      } else {
+        bones.neck.rotation.y += (targetHeadY * 0.3 - bones.neck.rotation.y) * 0.05;
+        bones.neck.rotation.x +=
+          (targetHeadX * 0.3 + config.seat.lean * 0.08 + gestureNeckPitch - bones.neck.rotation.x) *
+          0.05;
+        bones.neck.rotation.z += (targetHeadZ * 0.25 - bones.neck.rotation.z) * 0.05;
+      }
     }
     if (bones.spine1) {
       bones.spine1.rotation.x = breath + config.seat.lean * 0.12 + currentSlouch.current;
