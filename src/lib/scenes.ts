@@ -23,6 +23,7 @@ export type SceneConfig = {
   /** key light colour — the "screen glow" on the face */
   key: string;
   fill: string;
+  avatar: string;
   props: Prop[];
   /** hip height + placement of the seated figure */
   seat: { position: [number, number, number]; rotationY: number; lean: number };
@@ -43,6 +44,7 @@ const BEDROOM: SceneConfig = {
   wall: "#2b2733",
   key: "#ffc98a",
   fill: "#6c6f9c",
+  avatar: "/models/avatars/companion_female.glb",
   props: [
     wallRow("wall", -2.85),
     wallRow("wallWindow", -0.95),
@@ -71,6 +73,7 @@ const OFFICE: SceneConfig = {
   wall: "#26262e",
   key: "#f4e9dd",
   fill: "#6a7690",
+  avatar: "/models/avatars/aurora.glb",
   props: [
     wallRow("wall", -2.85),
     wallRow("wallWindow", -0.95),
@@ -93,14 +96,21 @@ const OFFICE: SceneConfig = {
 const BY_MODE: Record<ModeSlug, SceneConfig> = {
   companion: BEDROOM,
   english: BEDROOM,
-  communication: OFFICE,
-  interview: OFFICE,
-  study: OFFICE,
+  communication: { ...OFFICE, avatar: "/models/avatars/celeste.glb" },
+  interview: { ...OFFICE, avatar: "/models/avatars/aurora.glb" },
+  study: { ...OFFICE, avatar: "/models/avatars/aurora.glb" },
 };
 
 export function getScene(mode: string): SceneConfig {
   return BY_MODE[mode as ModeSlug] ?? BEDROOM;
 }
+
+export const AVATAR_MODELS = [
+  "/models/avatars/companion_female.glb",
+  "/models/avatars/aurora.glb",
+  "/models/avatars/celeste.glb",
+  "/models/avatars/interviewer_male.glb",
+];
 
 export const FURNITURE_MODELS = Array.from(
   new Set([...BEDROOM.props, ...OFFICE.props].map((prop) => prop.model)),
