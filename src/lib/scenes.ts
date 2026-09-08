@@ -63,7 +63,7 @@ const BEDROOM: SceneConfig = {
     { model: "plantSmall2", position: [-1.6, 0.49, -2.05], scale: F },
   ],
   seat: { position: [0, 0.4, -0.5], rotationY: 0.05, lean: 0.1 },
-  camera: { position: [0.34, 1.24, 1.95], target: [-0.02, 0.95, -0.45], fov: 34 },
+  camera: { position: [0.18, 1.25, 1.65], target: [-0.02, 1.14, -0.45], fov: 32 },
 };
 
 const OFFICE: SceneConfig = {
@@ -90,7 +90,7 @@ const OFFICE: SceneConfig = {
     { model: "rugRectangle", position: [-1.6, 0.005, 0.2], scale: F },
   ],
   seat: { position: [0, 0.52, -0.42], rotationY: -0.04, lean: 0.14 },
-  camera: { position: [0.32, 1.38, 2.05], target: [-0.02, 1.05, -0.4], fov: 34 },
+  camera: { position: [0.18, 1.34, 1.70], target: [-0.02, 1.22, -0.4], fov: 32 },
 };
 
 const BY_MODE: Record<ModeSlug, SceneConfig> = {

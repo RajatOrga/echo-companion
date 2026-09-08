@@ -46,10 +46,21 @@ function RealisticAvatar({
         mesh.castShadow = true;
         mesh.receiveShadow = true;
 
-        if (mesh.material) {
-          const mat = mesh.material as THREE.MeshStandardMaterial;
-          if (mat.roughness !== undefined) {
-            mat.roughness = Math.max(mat.roughness, 0.45);
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of materials) {
+          if (m && "roughness" in m) {
+            const mat = m as THREE.MeshStandardMaterial;
+            const name = mesh.name.toLowerCase();
+            if (name.includes("outfit") || name.includes("hair") || name.includes("top") || name.includes("bottom")) {
+              mat.roughness = 0.88;
+              mat.metalness = 0.02;
+            } else if (name.includes("skin") || name.includes("head") || name.includes("body")) {
+              mat.roughness = 0.62;
+              mat.metalness = 0.0;
+            } else if (!name.includes("eye")) {
+              mat.roughness = Math.max(mat.roughness ?? 0.7, 0.65);
+              mat.metalness = Math.min(mat.metalness ?? 0, 0.1);
+            }
           }
         }
 
@@ -97,26 +108,14 @@ function RealisticAvatar({
       if (child.type === "Bone") {
         const bone = child as THREE.Bone;
         // Pose legs into a seated position
-        if (bone.name === "LeftUpLeg") {
-          bone.rotation.x = -Math.PI / 2.2;
-          bone.rotation.z = 0.08;
-          bone.rotation.y = -0.05;
-        } else if (bone.name === "RightUpLeg") {
-          bone.rotation.x = -Math.PI / 2.2;
-          bone.rotation.z = -0.08;
-          bone.rotation.y = 0.05;
-        } else if (bone.name === "LeftLeg" || bone.name === "RightLeg") {
-          bone.rotation.x = Math.PI / 2.1;
-        } else if (bone.name === "LeftArm") {
-          bone.rotation.z = -Math.PI / 3.4;
-          bone.rotation.x = 0.35;
+        if (bone.name === "LeftArm") {
+          bone.rotation.set(1.31, 0.19, 0.12);
         } else if (bone.name === "RightArm") {
-          bone.rotation.z = Math.PI / 3.4;
-          bone.rotation.x = 0.35;
+          bone.rotation.set(1.31, -0.19, -0.12);
         } else if (bone.name === "LeftForeArm") {
-          bone.rotation.x = 0.55;
+          bone.rotation.set(0.18, 0.12, 0.38);
         } else if (bone.name === "RightForeArm") {
-          bone.rotation.x = 0.55;
+          bone.rotation.set(0.18, -0.12, -0.38);
         }
       }
     });
