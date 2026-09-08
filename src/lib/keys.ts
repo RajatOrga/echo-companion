@@ -13,7 +13,7 @@ export type KeySettings = {
   apiKey: string;
   model: string;
   baseUrl: string;
-  ttsProvider: "none" | "openai" | "elevenlabs";
+  ttsProvider: "edge" | "openai" | "elevenlabs" | "none";
   ttsKey: string;
   voice: string;
 };
@@ -26,6 +26,18 @@ export const DEFAULT_MODELS: Record<LlmProvider, string> = {
   gemini: "gemini-2.0-flash",
   custom: "",
 };
+
+export const EDGE_VOICES = [
+  { id: "auto", name: "Auto (Section-tuned)", description: "Adapts to Interview, Casual, Companion, etc." },
+  { id: "en-US-AvaMultilingualNeural", name: "Ava", description: "Warm, empathetic, expressive (Default)" },
+  { id: "en-US-AndrewMultilingualNeural", name: "Andrew", description: "Confident, grounded, authoritative" },
+  { id: "en-US-EmmaMultilingualNeural", name: "Emma", description: "Soft, gentle, intimate" },
+  { id: "en-US-BrianMultilingualNeural", name: "Brian", description: "Dynamic, clear, enthusiastic" },
+  { id: "en-GB-SoniaNeural", name: "Sonia", description: "Articulate, pleasant British accent" },
+  { id: "en-US-AriaNeural", name: "Aria", description: "Natural, melodic, engaging" },
+  { id: "en-US-GuyNeural", name: "Guy", description: "Relaxed, friendly male" },
+  { id: "en-US-JennyNeural", name: "Jenny", description: "Bright, friendly, articulate" },
+] as const;
 
 export const OPENAI_VOICES = [
   { id: "auto", name: "Auto (Section-tuned)", description: "Adapts to Interview, Casual, Companion, etc." },
@@ -60,7 +72,10 @@ export function getVoiceForMode(settings: KeySettings, mode: Mode): string {
   if (settings.ttsProvider === "elevenlabs") {
     return mode.voice.elevenlabs.id;
   }
-  return mode.voice.openai;
+  if (settings.ttsProvider === "openai") {
+    return mode.voice.openai;
+  }
+  return mode.voice.edge;
 }
 
 export const EMPTY_SETTINGS: KeySettings = {
@@ -68,7 +83,7 @@ export const EMPTY_SETTINGS: KeySettings = {
   apiKey: "",
   model: DEFAULT_MODELS.openai,
   baseUrl: "",
-  ttsProvider: "none",
+  ttsProvider: "edge",
   ttsKey: "",
   voice: "auto",
 };

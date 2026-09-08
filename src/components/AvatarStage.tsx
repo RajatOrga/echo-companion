@@ -20,11 +20,17 @@ export function AvatarStage({
   engine,
   gazeRef,
   active,
+  listening = false,
+  headGesture,
+  gestureKey,
   config,
 }: {
   engine: EmotionEngine;
   gazeRef: { current: string };
   active: boolean;
+  listening?: boolean;
+  headGesture?: string;
+  gestureKey?: number;
   config: SceneConfig;
 }) {
   return (
@@ -32,7 +38,15 @@ export function AvatarStage({
       <div className="relative h-full w-full">
         <ClientOnly fallback={<Placeholder label={`entering ${config.label}`} />}>
           <Suspense fallback={<Placeholder label={`entering ${config.label}`} />}>
-            <AvatarFace engine={engine} gazeRef={gazeRef} active={active} config={config} />
+            <AvatarFace
+              engine={engine}
+              gazeRef={gazeRef}
+              active={active}
+              listening={listening}
+              headGesture={headGesture}
+              gestureKey={gestureKey}
+              config={config}
+            />
           </Suspense>
         </ClientOnly>
       </div>

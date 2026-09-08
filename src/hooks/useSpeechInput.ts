@@ -21,14 +21,39 @@ function getRecognitionCtor(): (new () => RecognitionLike) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-/** Browser speech-to-text. Free, built in, no key required. */
-export function useSpeechInput(onFinal: (text: string) => void) {
+export type SpeechInputOptions = {
+  continuous?: boolean;
+  silenceTimeoutMs?: number;
+};
+
+/**
+ * Browser speech-to-text with continuous Conversation Mode & silence timeout (VAD).
+ * Allows natural pauses without prematurely cutting off thoughts or requiring repeated mic tapping.
+ */
+export function useSpeechInput(
+  onFinal: (text: string) => void,
+  options?: SpeechInputOptions,
+) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [supported, setSupported] = useState(true);
+
   const recognition = useRef<RecognitionLike | null>(null);
   const finalHandler = useRef(onFinal);
   finalHandler.current = onFinal;
+
+  const continuous = options?.continuous ?? false;
+  const continuousRef = useRef(continuous);
+  continuousRef.current = continuous;
+
+  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 1400;
+  const silenceTimeoutMsRef = useRef(silenceTimeoutMs);
+  silenceTimeoutMsRef.current = silenceTimeoutMs;
+
+  const accumulator = useRef("");
+  const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restartTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldListen = useRef(false);
 
   useEffect(() => {
     const Ctor = getRecognitionCtor();
@@ -37,37 +62,107 @@ export function useSpeechInput(onFinal: (text: string) => void) {
       return;
     }
     const instance = new Ctor();
-    instance.continuous = false;
+    instance.continuous = continuous;
     instance.interimResults = true;
     instance.lang = "en-US";
+
     instance.onresult = (event: unknown) => {
       const e = event as {
         resultIndex: number;
         results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>;
       };
-      let live = "";
-      for (let i = e.resultIndex; i < e.results.length; i += 1) {
-        const result = e.results[i]!;
-        const transcript = result[0]?.transcript ?? "";
-        if (result.isFinal) {
-          const text = transcript.trim();
-          if (text) finalHandler.current(text);
-        } else {
-          live += transcript;
+
+      if (continuousRef.current) {
+        let live = "";
+        for (let i = e.resultIndex; i < e.results.length; i += 1) {
+          const result = e.results[i]!;
+          const transcript = result[0]?.transcript ?? "";
+          if (result.isFinal) {
+            const text = transcript.trim();
+            if (text) {
+              accumulator.current = accumulator.current
+                ? `${accumulator.current} ${text}`
+                : text;
+            }
+          } else {
+            live += transcript;
+          }
         }
+
+        const fullPreview = (
+          accumulator.current + (live ? ` ${live}` : "")
+        ).trim();
+        setInterim(fullPreview);
+
+        // Reset silence timer every time user speaks
+        if (silenceTimer.current) clearTimeout(silenceTimer.current);
+        if (fullPreview) {
+          silenceTimer.current = setTimeout(() => {
+            const toSubmit = (
+              accumulator.current + (live ? ` ${live}` : "")
+            ).trim();
+            if (toSubmit) {
+              accumulator.current = "";
+              setInterim("");
+              finalHandler.current(toSubmit);
+            }
+          }, silenceTimeoutMsRef.current);
+        }
+      } else {
+        // Single-phrase mode
+        let live = "";
+        for (let i = e.resultIndex; i < e.results.length; i += 1) {
+          const result = e.results[i]!;
+          const transcript = result[0]?.transcript ?? "";
+          if (result.isFinal) {
+            const text = transcript.trim();
+            if (text) finalHandler.current(text);
+          } else {
+            live += transcript;
+          }
+        }
+        setInterim(live);
       }
-      setInterim(live);
     };
-    instance.onerror = () => {
-      setListening(false);
-      setInterim("");
+
+    instance.onerror = (event: unknown) => {
+      const err = (event as { error?: string })?.error;
+      if (err === "no-speech") {
+        // Normal pause during conversation mode
+        return;
+      }
+      if (err === "not-allowed" || err === "service-not-allowed") {
+        shouldListen.current = false;
+        setListening(false);
+        setInterim("");
+      }
     };
+
     instance.onend = () => {
-      setListening(false);
-      setInterim("");
+      if (shouldListen.current && continuousRef.current) {
+        // Auto-rearm watchdog if recognition drops during conversation mode
+        if (restartTimer.current) clearTimeout(restartTimer.current);
+        restartTimer.current = setTimeout(() => {
+          if (shouldListen.current) {
+            try {
+              instance.start();
+              setListening(true);
+            } catch {
+              /* already started or aborted */
+            }
+          }
+        }, 150);
+      } else {
+        setListening(false);
+        setInterim("");
+      }
     };
+
     recognition.current = instance;
     return () => {
+      shouldListen.current = false;
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+      if (restartTimer.current) clearTimeout(restartTimer.current);
       instance.onresult = null;
       instance.onend = null;
       instance.onerror = null;
@@ -77,20 +172,28 @@ export function useSpeechInput(onFinal: (text: string) => void) {
         /* already stopped */
       }
     };
-  }, []);
+  }, [continuous]);
 
   const start = useCallback(() => {
+    shouldListen.current = true;
+    accumulator.current = "";
+    setInterim("");
     const instance = recognition.current;
     if (!instance) return;
     try {
       instance.start();
       setListening(true);
     } catch {
-      /* already started */
+      /* already running */
     }
   }, []);
 
   const stop = useCallback(() => {
+    shouldListen.current = false;
+    if (silenceTimer.current) clearTimeout(silenceTimer.current);
+    if (restartTimer.current) clearTimeout(restartTimer.current);
+    accumulator.current = "";
+    setInterim("");
     try {
       recognition.current?.stop();
     } catch {
@@ -99,5 +202,15 @@ export function useSpeechInput(onFinal: (text: string) => void) {
     setListening(false);
   }, []);
 
-  return { listening, interim, supported, start, stop };
+  const flush = useCallback(() => {
+    if (silenceTimer.current) clearTimeout(silenceTimer.current);
+    const toSubmit = (accumulator.current + (interim ? ` ${interim}` : "")).trim();
+    if (toSubmit) {
+      accumulator.current = "";
+      setInterim("");
+      finalHandler.current(toSubmit);
+    }
+  }, [interim]);
+
+  return { listening, interim, supported, start, stop, flush };
 }

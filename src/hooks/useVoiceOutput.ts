@@ -3,7 +3,14 @@ import type { EmotionEngine } from "@/lib/emotion";
 import type { KeySettings } from "@/lib/keys";
 
 type SpeakFn = (input: {
-  data: { ttsProvider: "openai" | "elevenlabs"; ttsKey: string; voice: string; text: string };
+  data: {
+    ttsProvider: "edge" | "openai" | "elevenlabs";
+    ttsKey: string;
+    voice: string;
+    text: string;
+    emotion?: string;
+    intensity?: number;
+  };
 }) => Promise<{ audio: string; mimeType: string }>;
 
 function base64ToBytes(base64: string) {
@@ -15,6 +22,8 @@ function base64ToBytes(base64: string) {
 
 export type VoiceOptions = {
   voice?: string;
+  emotion?: string;
+  intensity?: number;
   browser?: {
     rate: number;
     pitch: number;
@@ -92,18 +101,41 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
   const speak = useCallback(
     async (text: string, settings: KeySettings, options?: VoiceOptions) => {
       cleanup();
-      if (settings.ttsProvider === "none" || !settings.ttsKey.trim()) {
-        await browserVoice(text, options?.browser);
+      if (
+        settings.ttsProvider === "none" ||
+        (settings.ttsProvider !== "edge" && !settings.ttsKey.trim())
+      ) {
+        let rate = options?.browser?.rate ?? 0.98;
+        let pitch = options?.browser?.pitch ?? 1.0;
+        if (options?.emotion === "happy" || options?.emotion === "amused") {
+          rate *= 1.05;
+          pitch *= 1.08;
+        } else if (options?.emotion === "thoughtful" || options?.emotion === "sad") {
+          rate *= 0.92;
+          pitch *= 0.95;
+        } else if (options?.emotion === "curious" || options?.emotion === "surprised") {
+          pitch *= 1.05;
+        }
+        await browserVoice(text, { rate, pitch });
         return;
       }
       try {
-        const voice = options?.voice || (settings.voice !== "auto" ? settings.voice : "alloy");
+        const defaultVoice =
+          settings.ttsProvider === "edge"
+            ? "en-US-AvaMultilingualNeural"
+            : settings.ttsProvider === "elevenlabs"
+              ? "21m00Tcm4TlvDq8ikWAM"
+              : "alloy";
+        const voice =
+          options?.voice || (settings.voice !== "auto" ? settings.voice : defaultVoice);
         const { audio } = await speakFn({
           data: {
             ttsProvider: settings.ttsProvider,
             ttsKey: settings.ttsKey,
             voice,
             text,
+            emotion: options?.emotion,
+            intensity: options?.intensity,
           },
         });
         const ctx = ctxRef.current ?? new AudioContext();

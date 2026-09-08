@@ -56,12 +56,18 @@ function SettingsPage() {
             label="Voice"
             value={
               settings?.ttsProvider === "none"
-                ? "Browser voice (section-tuned)"
-                : `${settings?.ttsProvider === "elevenlabs" ? "ElevenLabs" : "OpenAI"} · ${
-                    settings?.voice === "auto" || !settings?.voice
-                      ? "Auto (Section-tuned)"
-                      : settings?.voice
-                  }`
+                ? "Browser voice (robotic fallback)"
+                : settings?.ttsProvider === "edge"
+                  ? `Neural HD (Free) · ${
+                      settings?.voice === "auto" || !settings?.voice
+                        ? "Auto (Section-tuned)"
+                        : settings?.voice
+                    }`
+                  : `${settings?.ttsProvider === "elevenlabs" ? "ElevenLabs" : "OpenAI"} · ${
+                      settings?.voice === "auto" || !settings?.voice
+                        ? "Auto (Section-tuned)"
+                        : settings?.voice
+                    }`
             }
           />
           <Row label="Account" value={user?.email ?? "Signed out (this device only)"} />
@@ -72,19 +78,37 @@ function SettingsPage() {
             to="/setup"
             className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform duration-500 hover:scale-[1.02]"
           >
-            Change keys
+            Configure AI & Voice
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              if (settings) saveSettings({ ...settings, ttsProvider: "none", ttsKey: "" });
-              setSettings((prev) => (prev ? { ...prev, ttsProvider: "none", ttsKey: "" } : prev));
-              toast.success("Switched to the browser voice");
-            }}
-            className="rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground"
-          >
-            Use browser voice
-          </button>
+          {settings?.ttsProvider !== "edge" ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (settings) saveSettings({ ...settings, ttsProvider: "edge", voice: "auto" });
+                setSettings((prev) =>
+                  prev ? { ...prev, ttsProvider: "edge", voice: "auto" } : prev,
+                );
+                toast.success("Switched to Free Neural HD Voice");
+              }}
+              className="rounded-full border border-primary/50 bg-primary/10 px-5 py-2.5 text-sm text-primary transition-colors duration-300 hover:bg-primary/20"
+            >
+              Use Neural HD (Free)
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (settings) saveSettings({ ...settings, ttsProvider: "none", ttsKey: "" });
+                setSettings((prev) =>
+                  prev ? { ...prev, ttsProvider: "none", ttsKey: "" } : prev,
+                );
+                toast.success("Switched to the browser voice");
+              }}
+              className="rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground"
+            >
+              Use browser voice
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

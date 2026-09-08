@@ -97,41 +97,49 @@ export class EmotionEngine {
     const { warmth, energy, concern, amusement, calm } = this.current;
     const breath = (Math.sin(this.t * 0.9) + 1) / 2;
 
-    const smile = warmth * 0.55 + amusement * 0.45;
-    const browUp = energy * 0.5 + concern * 0.2;
+    const baseSmile = warmth * 0.58 + amusement * 0.48;
+    // Conversational brow lift on spoken syllables
+    const speechBrowLift = Math.max(0, this.mouth - 0.25) * 0.35 * energy;
+    const browUp = energy * 0.45 + concern * 0.2 + speechBrowLift;
     const browDown = concern * 0.55;
-    const squint = amusement * 0.35 + smile * 0.15;
-    const jaw = this.mouth * 0.75 + amusement * 0.05;
+    const squint = amusement * 0.4 + baseSmile * 0.18;
+    const jaw = this.mouth * 0.8 + amusement * 0.05;
+
+    // Organic facial asymmetry (humans have ~5-10% natural variance)
+    const smileLeft = baseSmile * 1.03;
+    const smileRight = baseSmile * 0.97;
+    const browLeft = browUp * 0.98;
+    const browRight = browUp * 1.04;
 
     return {
       jawOpen: jaw,
-      mouthOpen: jaw * 0.6,
+      mouthOpen: jaw * 0.65,
       mouthClose: (1 - this.mouth) * 0.05,
-      mouthSmileLeft: smile,
-      mouthSmileRight: smile,
-      mouthFrownLeft: concern * 0.35,
-      mouthFrownRight: concern * 0.35,
-      mouthPucker: this.mouth * 0.15,
-      mouthDimpleLeft: smile * 0.4,
-      mouthDimpleRight: smile * 0.4,
-      cheekSquintLeft: squint,
-      cheekSquintRight: squint,
-      browInnerUp: browUp * 0.8 + concern * 0.4,
-      browOuterUpLeft: browUp,
-      browOuterUpRight: browUp,
-      browDownLeft: browDown,
-      browDownRight: browDown,
-      eyeBlinkLeft: Math.max(blinkWeight, squint * 0.25),
-      eyeBlinkRight: Math.max(blinkWeight, squint * 0.25),
+      mouthSmileLeft: smileLeft,
+      mouthSmileRight: smileRight,
+      mouthFrownLeft: concern * 0.38,
+      mouthFrownRight: concern * 0.32,
+      mouthPucker: this.mouth * 0.12,
+      mouthDimpleLeft: smileLeft * 0.45,
+      mouthDimpleRight: smileRight * 0.4,
+      cheekSquintLeft: squint * 1.02,
+      cheekSquintRight: squint * 0.98,
+      browInnerUp: browUp * 0.85 + concern * 0.45,
+      browOuterUpLeft: browLeft,
+      browOuterUpRight: browRight,
+      browDownLeft: browDown * 1.03,
+      browDownRight: browDown * 0.97,
+      eyeBlinkLeft: Math.max(blinkWeight, squint * 0.22),
+      eyeBlinkRight: Math.max(blinkWeight, squint * 0.22),
       eyeSquintLeft: squint,
       eyeSquintRight: squint,
       eyeWideLeft: energy * 0.35 * (1 - calm),
       eyeWideRight: energy * 0.35 * (1 - calm),
-      noseSneerLeft: concern * 0.1,
-      noseSneerRight: concern * 0.1,
+      noseSneerLeft: concern * 0.12,
+      noseSneerRight: concern * 0.08,
       // subtle life
-      mouthStretchLeft: breath * 0.03,
-      mouthStretchRight: breath * 0.03,
+      mouthStretchLeft: breath * 0.035,
+      mouthStretchRight: breath * 0.035,
     };
   }
 }

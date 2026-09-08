@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { testConnection } from "@/lib/ai.functions";
 import {
   DEFAULT_MODELS,
+  EDGE_VOICES,
   ELEVENLABS_VOICES,
   OPENAI_VOICES,
   loadSettings,
@@ -161,31 +162,56 @@ function SetupPage() {
 
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Voice (optional)
+              Voice Provider
             </label>
             <div className="flex flex-wrap gap-2">
-              {(["none", "openai", "elevenlabs"] as const).map((option) => (
+              {(
+                [
+                  { id: "edge", label: "Neural HD (Free & Realistic)" },
+                  { id: "elevenlabs", label: "ElevenLabs (Ultra Emotional)" },
+                  { id: "openai", label: "OpenAI Voice" },
+                  { id: "none", label: "Browser Voice" },
+                ] as const
+              ).map((option) => (
                 <button
-                  key={option}
+                  key={option.id}
                   type="button"
-                  onClick={() => update({ ttsProvider: option })}
+                  onClick={() => update({ ttsProvider: option.id })}
                   className={`rounded-full border px-4 py-2 text-sm transition-all duration-400 ${
-                    settings.ttsProvider === option
+                    settings.ttsProvider === option.id
                       ? "border-primary/60 bg-primary/10 text-foreground"
                       : "border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {option === "none"
-                    ? "Browser voice"
-                    : option === "openai"
-                      ? "OpenAI voice"
-                      : "ElevenLabs"}
+                  {option.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {settings.ttsProvider !== "none" ? (
+          {settings.ttsProvider === "edge" ? (
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Neural Voice Preset
+              </label>
+              <div className="grid gap-2">
+                <select
+                  value={settings.voice || "auto"}
+                  onChange={(event) => update({ voice: event.target.value })}
+                  className="w-full rounded-xl border border-input bg-card px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+                >
+                  {EDGE_VOICES.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} — {v.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-xs text-primary/80">
+                ✨ Free studio-grade Microsoft Neural TTS. Zero setup or API key required.
+              </p>
+            </div>
+          ) : settings.ttsProvider === "elevenlabs" || settings.ttsProvider === "openai" ? (
             <>
               <Field label="Voice key">
                 <input

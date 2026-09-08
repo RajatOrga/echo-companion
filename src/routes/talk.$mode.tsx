@@ -59,6 +59,8 @@ function TalkPage() {
   const [speaking, setSpeaking] = useState(false);
   const [draft, setDraft] = useState("");
   const [handsFree, setHandsFree] = useState(false);
+  const [headGesture, setHeadGesture] = useState<string>("still");
+  const [gestureKey, setGestureKey] = useState<number>(0);
   const [showTranscript, setShowTranscript] = useState(false);
   const [lastFailed, setLastFailed] = useState<string | null>(null);
 
@@ -140,6 +142,7 @@ function TalkPage() {
       const message = text.trim();
       const settings = settingsRef.current;
       if (!message || !settings) return;
+      speechRef.current?.stop();
       stopSpeaking();
       setBusy(true);
       setLastFailed(null);
@@ -167,6 +170,8 @@ function TalkPage() {
           engineRef.current.nudge(result.emotion, result.intensity);
         }
         gazeRef.current = result.gaze;
+        setHeadGesture(result.head);
+        setGestureKey((k) => k + 1);
 
         setCaptions((prev) => [
           ...prev,
@@ -180,13 +185,19 @@ function TalkPage() {
         const activeVoice = getVoiceForMode(settings, mode);
         await speak(result.reply, settings, {
           voice: activeVoice,
+          emotion: result.emotion,
+          intensity: result.intensity,
           browser: mode.voice.browser,
         });
         setSpeaking(false);
         engineRef.current.settle(0.2);
         gazeRef.current = "user";
-        // Hands-free: hand the turn straight back to the user.
-        if (handsFreeRef.current && speechRef.current?.supported) speechRef.current.start();
+        // Hands-free / Live Conversation: hand the turn straight back to the user with small pause
+        if (handsFreeRef.current && speechRef.current?.supported) {
+          setTimeout(() => {
+            if (handsFreeRef.current) speechRef.current?.start();
+          }, 280);
+        }
       } catch (error) {
         setBusy(false);
         setSpeaking(false);
@@ -199,7 +210,10 @@ function TalkPage() {
     [ask, mode, persist, speak, stopSpeaking],
   );
 
-  const speech = useSpeechInput((text) => void send(text));
+  const speech = useSpeechInput((text) => void send(text), {
+    continuous: handsFree,
+    silenceTimeoutMs: 1400,
+  });
   speechRef.current = { start: speech.start, stop: speech.stop, supported: speech.supported };
 
   const toggleMic = useCallback(() => {
@@ -210,6 +224,20 @@ function TalkPage() {
       speech.start();
     }
   }, [speech, stopSpeaking]);
+
+  const toggleConversationMode = useCallback(() => {
+    setHandsFree((prev) => {
+      const next = !prev;
+      if (next) {
+        toast.success("Live Conversation Mode: Always listening without button taps");
+        setTimeout(() => speechRef.current?.start(), 100);
+      } else {
+        speechRef.current?.stop();
+        toast.info("Switched to push-to-talk");
+      }
+      return next;
+    });
+  }, []);
 
   const interrupt = useCallback(() => {
     stopSpeaking();
@@ -225,6 +253,9 @@ function TalkPage() {
           engine={engineRef.current}
           gazeRef={gazeRef}
           active={speaking || speech.listening}
+          listening={speech.listening}
+          headGesture={headGesture}
+          gestureKey={gestureKey}
           config={scene}
         />
       </div>
@@ -235,14 +266,24 @@ function TalkPage() {
 
       {/* live status, just under the top bar */}
       <div className="pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center">
-        <span className="rounded-full border border-border/60 bg-card/50 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/80 backdrop-blur-md">
+        <span className="flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3.5 py-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/90 backdrop-blur-md">
+          {handsFree ? (
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </span>
+          ) : null}
           {busy
             ? "thinking"
             : speaking
               ? "speaking"
               : speech.listening
-                ? "listening"
-                : scene.label}
+                ? handsFree
+                  ? "listening to you"
+                  : "listening"
+                : handsFree
+                  ? "live ready"
+                  : scene.label}
         </span>
       </div>
 
@@ -273,7 +314,11 @@ function TalkPage() {
         </div>
 
         {/* control dock */}
-        <div className="flex w-full max-w-xl items-center gap-2 rounded-full border border-border/70 bg-card/60 p-2 shadow-2xl backdrop-blur-xl">
+        <div
+          className={`flex w-full max-w-xl items-center gap-2 rounded-full border bg-card/60 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 ${
+            handsFree ? "border-emerald-500/40 ring-1 ring-emerald-500/20" : "border-border/70"
+          }`}
+        >
           <MicButton
             listening={speech.listening}
             busy={busy}
@@ -292,23 +337,36 @@ function TalkPage() {
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder={speech.supported ? "Say it, or type…" : "Type your message"}
+              placeholder={
+                handsFree
+                  ? "Live conversation active… speak naturally"
+                  : speech.supported
+                    ? "Say it, or type…"
+                    : "Type your message"
+              }
               className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground/60"
             />
             {speech.supported ? (
               <button
                 type="button"
-                onClick={() => setHandsFree((value) => !value)}
+                onClick={toggleConversationMode}
                 aria-pressed={handsFree}
-                aria-label="Hands-free mode"
-                title={`Hands-free ${handsFree ? "on" : "off"}`}
-                className={`rounded-full p-2.5 transition-colors duration-300 ${
+                aria-label="Live Conversation Mode"
+                title={
                   handsFree
-                    ? "bg-primary/15 text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "Live Conversation Mode ON (auto-listening)"
+                    : "Turn on Live Conversation Mode (no mic taps needed)"
+                }
+                className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all duration-300 ${
+                  handsFree
+                    ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-400 shadow-sm"
+                    : "border border-border/40 text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
               >
-                <Radio className="h-4 w-4" />
+                <Radio className={`h-3.5 w-3.5 ${handsFree ? "animate-pulse text-emerald-400" : ""}`} />
+                <span className="text-[11px] tracking-wide">
+                  {handsFree ? "Live ON" : "Live Mode"}
+                </span>
               </button>
             ) : null}
             <button

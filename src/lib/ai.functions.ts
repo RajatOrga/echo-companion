@@ -142,17 +142,58 @@ export const runTurn = createServerFn({ method: "POST" })
   .handler(({ data }) => chat(data));
 
 const SpeakInput = z.object({
-  ttsProvider: z.enum(["openai", "elevenlabs"]),
-  ttsKey: z.string().min(1),
+  ttsProvider: z.enum(["edge", "openai", "elevenlabs"]),
+  ttsKey: z.string().optional().default(""),
   voice: z.string().min(1),
   text: z.string().min(1).max(4000),
+  emotion: z.string().optional(),
+  intensity: z.number().optional(),
 });
 
 export const speak = createServerFn({ method: "POST" })
   .validator((input: unknown) => SpeakInput.parse(input))
   .handler(async ({ data }): Promise<{ audio: string; mimeType: string }> => {
+    if (data.ttsProvider === "edge") {
+      const { MsEdgeTTS, OUTPUT_FORMAT } = await import("msedge-tts");
+      const tts = new MsEdgeTTS();
+      await tts.setMetadata(
+        data.voice || "en-US-AvaMultilingualNeural",
+        OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3,
+      );
+      const { audioStream } = tts.toStream(data.text);
+      const chunks: Buffer[] = [];
+      await new Promise<void>((resolve, reject) => {
+        audioStream.on("data", (chunk: Buffer) => chunks.push(chunk));
+        audioStream.on("end", () => resolve());
+        audioStream.on("error", reject);
+      });
+      try {
+        tts.close();
+      } catch {
+        /* close if open */
+      }
+      const buffer = Buffer.concat(chunks);
+      return { audio: buffer.toString("base64"), mimeType: "audio/mpeg" };
+    }
+
     let res: Response;
     if (data.ttsProvider === "elevenlabs") {
+      let stability = 0.45;
+      let style = 0.35;
+      if (data.emotion === "happy" || data.emotion === "amused") {
+        stability = 0.38;
+        style = 0.55;
+      } else if (data.emotion === "warm" || data.emotion === "companion") {
+        stability = 0.42;
+        style = 0.45;
+      } else if (data.emotion === "thoughtful" || data.emotion === "sad" || data.emotion === "concerned") {
+        stability = 0.60;
+        style = 0.20;
+      } else if (data.emotion === "curious" || data.emotion === "surprised") {
+        stability = 0.40;
+        style = 0.48;
+      }
+
       res = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(data.voice)}`,
         {
@@ -162,15 +203,22 @@ export const speak = createServerFn({ method: "POST" })
             text: data.text,
             model_id: "eleven_turbo_v2_5",
             voice_settings: {
-              stability: 0.45,
+              stability,
               similarity_boost: 0.85,
-              style: 0.35,
+              style,
               use_speaker_boost: true,
             },
           }),
         },
       );
     } else {
+      const speed =
+        data.emotion === "thoughtful" || data.emotion === "sad"
+          ? 0.94
+          : data.emotion === "happy" || data.emotion === "amused"
+            ? 1.05
+            : 1.0;
+
       res = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${data.ttsKey}` },
@@ -179,14 +227,13 @@ export const speak = createServerFn({ method: "POST" })
           input: data.text,
           voice: data.voice,
           response_format: "mp3",
+          speed,
         }),
       });
     }
     if (!res.ok) await failure(res);
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    let binary = "";
-    for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!);
-    return { audio: btoa(binary), mimeType: "audio/mpeg" };
+    const buffer = Buffer.from(await res.arrayBuffer());
+    return { audio: buffer.toString("base64"), mimeType: "audio/mpeg" };
   });
 
 const TestInput = ChatInput.pick({

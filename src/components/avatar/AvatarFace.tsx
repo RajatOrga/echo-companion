@@ -20,11 +20,17 @@ function RealisticAvatar({
   engine,
   gazeRef,
   active,
+  listening = false,
+  headGesture,
+  gestureKey,
   config,
 }: {
   engine: EmotionEngine;
   gazeRef: { current: string };
   active: boolean;
+  listening?: boolean;
+  headGesture?: string;
+  gestureKey?: number;
   config: SceneConfig;
 }) {
   const modelUrl = config.avatar || "/models/avatars/companion_female.glb";
@@ -65,6 +71,10 @@ function RealisticAvatar({
     let neck: THREE.Bone | null = null;
     let spine: THREE.Bone | null = null;
     let spine1: THREE.Bone | null = null;
+    let leftShoulder: THREE.Bone | null = null;
+    let rightShoulder: THREE.Bone | null = null;
+    let leftArm: THREE.Bone | null = null;
+    let rightArm: THREE.Bone | null = null;
 
     avatar.traverse((child) => {
       if (child.type === "Bone") {
@@ -72,9 +82,13 @@ function RealisticAvatar({
         else if (child.name === "Neck") neck = child as THREE.Bone;
         else if (child.name === "Spine") spine = child as THREE.Bone;
         else if (child.name === "Spine1" || child.name === "Spine2") spine1 = child as THREE.Bone;
+        else if (child.name === "LeftShoulder") leftShoulder = child as THREE.Bone;
+        else if (child.name === "RightShoulder") rightShoulder = child as THREE.Bone;
+        else if (child.name === "LeftArm") leftArm = child as THREE.Bone;
+        else if (child.name === "RightArm") rightArm = child as THREE.Bone;
       }
     });
-    return { head, neck, spine, spine1 };
+    return { head, neck, spine, spine1, leftShoulder, rightShoulder, leftArm, rightArm };
   }, [avatar]);
 
   // Natural seated pose setup
@@ -108,6 +122,57 @@ function RealisticAvatar({
     });
   }, [avatar]);
 
+  // Gesture state management
+  const gestureState = useRef<{
+    type: "nod" | "tilt" | "shake" | "none";
+    startTime: number;
+    duration: number;
+    intensity: number;
+  }>({
+    type: "none",
+    startTime: 0,
+    duration: 0,
+    intensity: 1,
+  });
+
+  const lastGestureTrigger = useRef<number | undefined>(undefined);
+  const listeningNodTimer = useRef<number>(4.0 + Math.random() * 3.0);
+  const postureShiftTimer = useRef<number>(8.0 + Math.random() * 6.0);
+  const currentLean = useRef<number>(0);
+  const targetLean = useRef<number>(0);
+  const currentSlouch = useRef<number>(0);
+  const targetSlouch = useRef<number>(0);
+
+  // Trigger explicit gestures from AI response
+  useEffect(() => {
+    if (gestureKey !== undefined && gestureKey !== lastGestureTrigger.current) {
+      lastGestureTrigger.current = gestureKey;
+      const now = performance.now() / 1000;
+      if (headGesture === "nod") {
+        gestureState.current = {
+          type: "nod",
+          startTime: now,
+          duration: 1.35,
+          intensity: 1.0,
+        };
+      } else if (headGesture === "tilt") {
+        gestureState.current = {
+          type: "tilt",
+          startTime: now,
+          duration: 2.1,
+          intensity: 1.0,
+        };
+      } else if (headGesture === "shake") {
+        gestureState.current = {
+          type: "shake",
+          startTime: now,
+          duration: 1.45,
+          intensity: 1.0,
+        };
+      }
+    }
+  }, [gestureKey, headGesture]);
+
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
     const weights = engine.tick(dt);
@@ -136,28 +201,98 @@ function RealisticAvatar({
       }
     }
 
-    // Natural gaze and subtle micro-movements
+    // 1. Gesture Offsets Calculation
+    let gestureHeadPitch = 0;
+    let gestureHeadYaw = 0;
+    let gestureHeadRoll = 0;
+    let gestureNeckPitch = 0;
+
+    const g = gestureState.current;
+    if (g.type !== "none") {
+      const elapsed = t - g.startTime;
+      if (elapsed < g.duration) {
+        const p = elapsed / g.duration;
+        if (g.type === "nod") {
+          // Double nod: natural spring dip & rebound
+          const wave = Math.sin(p * Math.PI * 3.4) * Math.pow(1 - p, 1.1);
+          gestureHeadPitch = wave * 0.17 * g.intensity;
+          gestureNeckPitch = wave * 0.07 * g.intensity;
+        } else if (g.type === "tilt") {
+          // Curious head tilt
+          const wave = Math.sin(p * Math.PI) * Math.pow(1 - p, 0.5);
+          gestureHeadRoll = wave * 0.14 * g.intensity;
+          gestureHeadYaw = wave * 0.035 * g.intensity;
+        } else if (g.type === "shake") {
+          // Empathetic / thoughtful head shake
+          const wave = Math.sin(p * Math.PI * 3.0) * Math.pow(1 - p, 1.1);
+          gestureHeadYaw = wave * 0.13 * g.intensity;
+        }
+      } else {
+        g.type = "none";
+      }
+    }
+
+    // 2. Listening Micro-Nods (when user is speaking)
+    if (listening && g.type === "none") {
+      listeningNodTimer.current -= dt;
+      if (listeningNodTimer.current <= 0) {
+        listeningNodTimer.current = 4.0 + Math.random() * 3.5;
+        gestureState.current = {
+          type: "nod",
+          startTime: t,
+          duration: 0.85,
+          intensity: 0.45, // subtle acknowledgment
+        };
+      }
+    }
+
+    // 3. Natural Seated Posture Weight Shifts
+    postureShiftTimer.current -= dt;
+    if (postureShiftTimer.current <= 0) {
+      postureShiftTimer.current = 9.0 + Math.random() * 8.0;
+      targetLean.current = (Math.random() - 0.5) * 0.055;
+      targetSlouch.current = (Math.random() - 0.5) * 0.035;
+    }
+    currentLean.current += (targetLean.current - currentLean.current) * dt * 0.7;
+    currentSlouch.current += (targetSlouch.current - currentSlouch.current) * dt * 0.7;
+
+    // 4. Natural gaze and subtle micro-saccades
     const gaze = gazeRef.current;
-    const targetHeadY = gaze === "away" ? 0.22 : Math.sin(t * 0.35) * 0.045;
-    const targetHeadX = gaze === "down" ? 0.14 : Math.sin(t * 0.28) * 0.025;
+    const saccade = Math.sin(t * 1.8) > 0.94 ? (Math.sin(t * 12) * 0.012) : 0;
+    const targetHeadY =
+      (gaze === "away" ? 0.22 : Math.sin(t * 0.35) * 0.038 + saccade) + gestureHeadYaw;
+    const targetHeadX =
+      (gaze === "down" ? 0.14 : Math.sin(t * 0.28) * 0.022) + gestureHeadPitch;
+    const targetHeadZ = Math.sin(t * 0.25) * 0.01 + gestureHeadRoll;
 
     // Subtle breathing presence
-    const amp = active ? 1.3 : 1.0;
-    const breath = Math.sin(t * (active ? 1.8 : 1.2)) * 0.012 * amp;
+    const amp = active ? 1.35 : 1.0;
+    const breath = Math.sin(t * (active ? 1.8 : 1.15)) * 0.013 * amp;
 
     if (bones.head) {
-      bones.head.rotation.y += (targetHeadY - bones.head.rotation.y) * 0.045;
-      bones.head.rotation.x += (targetHeadX - bones.head.rotation.x) * 0.045;
-      bones.head.rotation.z = Math.sin(t * 0.25) * 0.012;
+      bones.head.rotation.y += (targetHeadY - bones.head.rotation.y) * 0.06;
+      bones.head.rotation.x += (targetHeadX - bones.head.rotation.x) * 0.06;
+      bones.head.rotation.z += (targetHeadZ - bones.head.rotation.z) * 0.06;
     }
     if (bones.neck) {
-      bones.neck.rotation.y += (targetHeadY * 0.35 - bones.neck.rotation.y) * 0.045;
+      bones.neck.rotation.y += (targetHeadY * 0.3 - bones.neck.rotation.y) * 0.05;
       bones.neck.rotation.x +=
-        (targetHeadX * 0.35 + config.seat.lean * 0.08 - bones.neck.rotation.x) * 0.045;
+        (targetHeadX * 0.3 + config.seat.lean * 0.08 + gestureNeckPitch - bones.neck.rotation.x) *
+        0.05;
+      bones.neck.rotation.z += (targetHeadZ * 0.25 - bones.neck.rotation.z) * 0.05;
     }
     if (bones.spine1) {
-      bones.spine1.rotation.x = breath + config.seat.lean * 0.12;
-      bones.spine1.rotation.z = Math.sin(t * 0.4) * 0.006 * amp;
+      bones.spine1.rotation.x = breath + config.seat.lean * 0.12 + currentSlouch.current;
+      bones.spine1.rotation.z = Math.sin(t * 0.38) * 0.005 * amp + currentLean.current;
+      bones.spine1.rotation.y = currentLean.current * 0.35;
+    }
+    if (bones.spine) {
+      bones.spine.rotation.z = currentLean.current * 0.45;
+      bones.spine.rotation.x = currentSlouch.current * 0.5;
+    }
+    if (bones.leftShoulder && bones.rightShoulder) {
+      bones.leftShoulder.rotation.z = -currentLean.current * 0.35 + breath * 0.006;
+      bones.rightShoulder.rotation.z = currentLean.current * 0.35 - breath * 0.006;
     }
   });
 
@@ -229,11 +364,17 @@ export default function AvatarFace({
   engine,
   gazeRef,
   active,
+  listening = false,
+  headGesture,
+  gestureKey,
   config,
 }: {
   engine: EmotionEngine;
   gazeRef: { current: string };
   active: boolean;
+  listening?: boolean;
+  headGesture?: string;
+  gestureKey?: number;
   config: SceneConfig;
 }) {
   return (
@@ -257,6 +398,9 @@ export default function AvatarFace({
           engine={engine}
           gazeRef={gazeRef}
           active={active}
+          listening={listening}
+          headGesture={headGesture}
+          gestureKey={gestureKey}
           config={config}
         />
         <Environment>
