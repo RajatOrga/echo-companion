@@ -68,40 +68,57 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         utterance.pitch = options?.pitch ?? 1.0;
 
         const voices = window.speechSynthesis.getVoices();
-        // Prefer natural / high-quality English voices
+        // Prioritize Microsoft Online Natural / Neural studio voices on Windows/Edge/Chrome
         const naturalVoice =
           voices.find(
             (v) =>
               v.lang.startsWith("en") &&
               (v.name.includes("Natural") ||
                 v.name.includes("Online") ||
+                v.name.includes("Jenny") ||
+                v.name.includes("Aria") ||
+                v.name.includes("Guy") ||
                 v.name.includes("Google") ||
-                v.name.includes("Premium") ||
-                v.name.includes("Samantha") ||
-                v.name.includes("Daniel") ||
-                v.name.includes("Aria")),
+                v.name.includes("Neural")),
           ) ?? voices.find((v) => v.lang.startsWith("en"));
         if (naturalVoice) utterance.voice = naturalVoice;
 
-        // No audio graph available for browser speech: fake a natural mouth rhythm.
+        let mouthDecayTimer: ReturnType<typeof setTimeout> | null = null;
         let t = 0;
         const tick = () => {
-          t += 0.05;
+          if (cancelledRef.current) return;
+          t += 0.08;
           const level =
-            0.25 + Math.abs(Math.sin(t * 6.1)) * 0.4 + Math.abs(Math.sin(t * 2.3)) * 0.25;
-          engine.setMouth(Math.min(level, 1));
+            0.2 + Math.abs(Math.sin(t * 7.2)) * 0.35 + Math.abs(Math.sin(t * 3.1)) * 0.2;
+          engine.setMouth(Math.min(level, 0.85));
           rafRef.current = requestAnimationFrame(tick);
         };
+
+        // Realistic mouth impulse on every word boundary
+        utterance.onboundary = (event) => {
+          if (event.name === "word") {
+            engine.setMouth(0.65 + Math.random() * 0.3);
+            if (mouthDecayTimer) clearTimeout(mouthDecayTimer);
+            mouthDecayTimer = setTimeout(() => {
+              engine.setMouth(0.15);
+            }, 110);
+          }
+        };
+
         rafRef.current = requestAnimationFrame(tick);
+
         const finish = () => {
-          cleanup();
+          if (mouthDecayTimer) clearTimeout(mouthDecayTimer);
+          if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+          engine.setMouth(0);
           resolve();
         };
         utterance.onend = finish;
         utterance.onerror = finish;
         window.speechSynthesis.speak(utterance);
       }),
-    [cleanup, engine],
+    [engine],
   );
 
   /** Decode base64 audio into an AudioBuffer ready for playback */
