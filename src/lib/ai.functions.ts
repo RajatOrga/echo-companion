@@ -330,6 +330,23 @@ const SpeakInput = z.object({
 let edgeTtsCache: unknown = null;
 let edgeTtsCacheVoice: string | null = null;
 
+export const prewarmTts = createServerFn({ method: "POST" })
+  .validator((input: unknown) => z.object({ voice: z.string().optional() }).parse(input))
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    try {
+      const { MsEdgeTTS, OUTPUT_FORMAT } = await import("msedge-tts");
+      const voiceKey = data.voice || "en-US-AvaMultilingualNeural";
+      if (!edgeTtsCache || edgeTtsCacheVoice !== voiceKey) {
+        const instance = new MsEdgeTTS();
+        await instance.setMetadata(voiceKey, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+        edgeTtsCache = instance;
+        edgeTtsCacheVoice = voiceKey;
+      }
+      return { ok: true };
+    } catch {
+      return { ok: false };
+    }
+  });
 
 export const speak = createServerFn({ method: "POST" })
   .validator((input: unknown) => SpeakInput.parse(input))

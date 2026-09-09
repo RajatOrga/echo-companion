@@ -11,7 +11,7 @@ import { TranscriptPanel } from "@/components/TranscriptPanel";
 import { useSpeechInput } from "@/hooks/useSpeechInput";
 import { useVoiceOutput } from "@/hooks/useVoiceOutput";
 import { useAuth } from "@/hooks/useAuth";
-import { runTurn, speak as speakFnServer, parseTurn, stripStreamingSpeech } from "@/lib/ai.functions";
+import { runTurn, speak as speakFnServer, prewarmTts as warmTtsServer, parseTurn, stripStreamingSpeech } from "@/lib/ai.functions";
 import { EmotionEngine, isEmotionName } from "@/lib/emotion";
 import { getVoiceForMode, hasKey, loadSettings, type KeySettings } from "@/lib/keys";
 import { getMode, REPLY_CONTRACT } from "@/lib/modes";
@@ -66,6 +66,7 @@ function TalkPage() {
 
   const ask = useServerFn(runTurn);
   const tts = useServerFn(speakFnServer);
+  const warmTts = useServerFn(warmTtsServer);
   const { speak, stopSpeaking } = useVoiceOutput(engineRef.current, tts);
 
   useEffect(() => {
@@ -281,6 +282,11 @@ function TalkPage() {
       // Instant Barge-in / Interruption: silence avatar when user speaks
       stopSpeaking();
       setSpeaking(false);
+      // Pre-warm Edge TTS WebSocket in the background while user is speaking
+      if (settingsRef.current?.ttsProvider === "edge") {
+        const activeVoice = getVoiceForMode(settingsRef.current, mode);
+        void warmTts({ data: { voice: activeVoice } }).catch(() => {});
+      }
     },
   });
   speechRef.current = { start: speech.start, stop: speech.stop, supported: speech.supported };
