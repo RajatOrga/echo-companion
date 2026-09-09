@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { EmotionEngine } from "@/lib/emotion";
 import type { KeySettings } from "@/lib/keys";
 import { splitIntoSentences } from "@/lib/sentences";
+import { stripSpeechText } from "@/lib/ai.functions";
 
 type SpeakFn = (input: {
   data: {
@@ -167,117 +168,152 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
    * playback while later sentences are still being synthesized.
    */
   const speak = useCallback(
-    async (text: string, settings: KeySettings, options?: VoiceOptions) => {
+    async (textOrStream: string | AsyncIterable<string>, settings: KeySettings, options?: VoiceOptions) => {
       cleanup();
       cancelledRef.current = false;
 
-      // Browser fallback (no TTS key / provider=none)
-      if (
-        settings.ttsProvider === "none" ||
-        (settings.ttsProvider !== "edge" &&
-          settings.ttsProvider !== "kokoro" &&
-          !settings.ttsKey.trim())
-      ) {
-        let rate = options?.browser?.rate ?? 0.98;
-        let pitch = options?.browser?.pitch ?? 1.0;
-        if (options?.emotion === "happy" || options?.emotion === "amused") {
-          rate *= 1.05;
-          pitch *= 1.08;
-        } else if (options?.emotion === "thoughtful" || options?.emotion === "sad") {
-          rate *= 0.92;
-          pitch *= 0.95;
-        } else if (options?.emotion === "curious" || options?.emotion === "surprised") {
-          pitch *= 1.05;
+      const stream =
+        typeof textOrStream === "string"
+          ? (async function* () { yield textOrStream; })()
+          : textOrStream;
+
+      const sentenceQueue: string[] = [];
+      let isStreamComplete = false;
+      let sentenceResolver: (() => void) | null = null;
+
+      const pushSentence = (sentence: string) => {
+        const clean = stripSpeechText(sentence);
+        if (clean) {
+          sentenceQueue.push(clean);
+          if (sentenceResolver) {
+            sentenceResolver();
+            sentenceResolver = null;
+          }
         }
-        await browserVoice(text, { rate, pitch });
-        return;
-      }
+      };
 
-      try {
-        const defaultVoice =
-          settings.ttsProvider === "kokoro"
-            ? "af_heart"
-            : settings.ttsProvider === "edge"
-              ? "en-US-AvaMultilingualNeural"
-              : settings.ttsProvider === "elevenlabs"
-                ? "21m00Tcm4TlvDq8ikWAM"
-                : "alloy";
-        const voice =
-          options?.voice || (settings.voice !== "auto" ? settings.voice : defaultVoice);
+      const waitForNextSentence = async () => {
+        if (sentenceQueue.length > 0) return sentenceQueue.shift()!;
+        if (isStreamComplete) return null;
+        await new Promise<void>((resolve) => { sentenceResolver = resolve; });
+        if (sentenceQueue.length > 0) return sentenceQueue.shift()!;
+        return null;
+      };
 
-        const sentences = splitIntoSentences(text);
-        if (sentences.length === 0) return;
-
-        // For a single sentence, skip the pipeline overhead
-        if (sentences.length === 1) {
-          const { audio } = await speakFn({
-            data: {
-              ttsProvider: settings.ttsProvider as "edge" | "kokoro" | "openai" | "elevenlabs",
-              ttsKey: settings.ttsKey,
-              voice,
-              text: sentences[0]!,
-              emotion: options?.emotion,
-              intensity: options?.intensity,
-            },
-          });
-          if (cancelledRef.current) return;
-          const buffer = await decodeChunk(audio);
-          if (cancelledRef.current) return;
-          await playBuffer(buffer);
-          return;
+      const producer = async () => {
+        let buffer = "";
+        try {
+          for await (const chunk of stream) {
+            if (cancelledRef.current) break;
+            buffer += chunk;
+            const segments = splitIntoSentences(buffer);
+            if (segments.length > 0) {
+              const lastSegment = segments.pop()!;
+              const isComplete = /[.!?。！？]\s*$/.test(lastSegment) || chunk.includes("\n");
+              
+              for (const s of segments) pushSentence(s);
+              
+              if (isComplete) {
+                pushSentence(lastSegment);
+                buffer = "";
+              } else {
+                buffer = lastSegment;
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Stream reading error:", e);
+        } finally {
+          if (buffer.trim()) pushSentence(buffer);
+          isStreamComplete = true;
+          if (sentenceResolver) sentenceResolver();
         }
+      };
 
-        // Pipeline: pre-synthesize up to 2 sentences ahead while playing current
-        const synthPromises: Promise<AudioBuffer | null>[] = [];
+      const audioQueue: AudioBuffer[] = [];
+      let audioResolver: (() => void) | null = null;
+      let isSynthComplete = false;
 
-        const synthesize = (idx: number): Promise<AudioBuffer | null> => {
-          if (idx >= sentences.length) return Promise.resolve(null);
-          return speakFn({
-            data: {
-              ttsProvider: settings.ttsProvider as "edge" | "kokoro" | "openai" | "elevenlabs",
-              ttsKey: settings.ttsKey,
-              voice,
-              text: sentences[idx]!,
-              emotion: options?.emotion,
-              intensity: options?.intensity,
-            },
-          })
-            .then(({ audio }) => (cancelledRef.current ? null : decodeChunk(audio)))
-            .catch(() => null);
-        };
-
-        // Kick off first 2 sentences immediately
-        synthPromises[0] = synthesize(0);
-        if (sentences.length > 1) {
-          synthPromises[1] = synthesize(1);
+      const pushAudio = (buffer: AudioBuffer) => {
+        audioQueue.push(buffer);
+        if (audioResolver) {
+          audioResolver();
+          audioResolver = null;
         }
+      };
 
-        // Play each sentence as it becomes available, launch next synthesis
-        for (let i = 0; i < sentences.length; i++) {
-          if (cancelledRef.current) return;
+      const waitForNextAudio = async () => {
+        if (audioQueue.length > 0) return audioQueue.shift()!;
+        if (isSynthComplete) return null;
+        await new Promise<void>((resolve) => { audioResolver = resolve; });
+        if (audioQueue.length > 0) return audioQueue.shift()!;
+        return null;
+      };
 
-          // Wait for this sentence's audio to be ready
-          const buffer = await synthPromises[i];
-          if (!buffer || cancelledRef.current) return;
+      const synthesizer = async () => {
+        const defaultVoice = settings.ttsProvider === "kokoro" ? "af_heart"
+            : settings.ttsProvider === "edge" ? "en-US-AvaMultilingualNeural"
+            : settings.ttsProvider === "elevenlabs" ? "21m00Tcm4TlvDq8ikWAM" : "alloy";
+        const voice = options?.voice || (settings.voice !== "auto" ? settings.voice : defaultVoice);
+        const MAX_AUDIO_QUEUE = 3; // cap pre-synthesized buffers to limit RAM on long responses
+        
+        while (!cancelledRef.current) {
+          // Backpressure: wait if we already have enough pre-synthesized audio
+          while (audioQueue.length >= MAX_AUDIO_QUEUE && !cancelledRef.current) {
+            await new Promise<void>((resolve) => { audioResolver = resolve; });
+          }
+          if (cancelledRef.current) break;
 
-          // Kick off synthesis for i+2 (look-ahead by 2)
-          const nextIdx = i + 2;
-          if (nextIdx < sentences.length) {
-            synthPromises[nextIdx] = synthesize(nextIdx);
+          const sentence = await waitForNextSentence();
+          if (!sentence) break;
+
+          if (settings.ttsProvider === "none" || (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim())) {
+             let rate = options?.browser?.rate ?? 0.98;
+             let pitch = options?.browser?.pitch ?? 1.0;
+             if (options?.emotion === "happy" || options?.emotion === "amused") { rate *= 1.05; pitch *= 1.08; }
+             else if (options?.emotion === "thoughtful" || options?.emotion === "sad") { rate *= 0.92; pitch *= 0.95; }
+             await browserVoice(sentence, { rate, pitch });
+             continue;
           }
 
-          // Play this chunk
+          try {
+             const { audio } = await speakFn({
+               data: {
+                 ttsProvider: settings.ttsProvider as any,
+                 ttsKey: settings.ttsKey,
+                 voice,
+                 text: sentence,
+                 emotion: options?.emotion,
+                 intensity: options?.intensity,
+               },
+             });
+             if (cancelledRef.current) break;
+             if (audio) {
+               const buffer = await decodeChunk(audio);
+               if (cancelledRef.current) break;
+               pushAudio(buffer);
+             }
+          } catch (e) {
+             console.error("Synthesis error:", e);
+          }
+        }
+        isSynthComplete = true;
+        if (audioResolver) audioResolver();
+      };
+
+      const player = async () => {
+        while (!cancelledRef.current) {
+          const buffer = await waitForNextAudio();
+          if (!buffer) break;
           await playBuffer(buffer);
-          if (cancelledRef.current) return;
         }
-      } catch {
-        // On any synthesis failure, fall back to browser voice
-        if (!cancelledRef.current) {
-          await browserVoice(text, options?.browser);
-        }
-      }
+      };
+
+      void producer();
+      void synthesizer();
+      await player();
     },
-    [browserVoice, cleanup, decodeChunk, engine, playBuffer, speakFn],
+    [cleanup, browserVoice, speakFn, playBuffer],
   );
 
   return { speak, stopSpeaking: cleanup };

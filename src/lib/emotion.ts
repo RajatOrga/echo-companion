@@ -51,6 +51,8 @@ export class EmotionEngine {
   private blinkTimer = 1.5;
   private blink = 0;
   private t = 0;
+  /** Seconds of continuous silence — triggers passive mood reset */
+  private idleTime = 0;
 
   /** Nudge the mood toward an emotion; intensity scales how far it moves. */
   nudge(emotion: EmotionName, intensity = 0.6) {
@@ -59,6 +61,7 @@ export class EmotionEngine {
     for (const key of KEYS) {
       this.target[key] = this.target[key] * (1 - k) + goal[key] * k;
     }
+    this.idleTime = 0; // reset idle timer on any emotion nudge
   }
 
   /** Slowly drift back to a resting mood (called when idle for a while). */
@@ -84,6 +87,16 @@ export class EmotionEngine {
     }
     this.mouth += (this.mouthTarget - this.mouth) * (1 - Math.exp(-dt * 18));
     this.t += dt;
+
+    // Passive idle drift: if mouth has been silent for 8+ seconds, nudge back to neutral
+    if (this.mouthTarget < 0.05) {
+      this.idleTime += dt;
+      if (this.idleTime > 8) {
+        this.settle(0.012 * dt); // very gentle, continuous drift
+      }
+    } else {
+      this.idleTime = 0;
+    }
 
     // Blinking with a little randomness so the face never looks frozen.
     this.blinkTimer -= dt;

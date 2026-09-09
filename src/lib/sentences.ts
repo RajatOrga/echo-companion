@@ -2,6 +2,10 @@
  * Splits text into speakable sentence chunks for streaming TTS.
  * Uses Intl.Segmenter with smart abbreviation and decimal handling
  * so speech sounds natural and uninterrupted.
+ *
+ * Also breaks on commas when a buffer exceeds 120 chars so verbose
+ * AI responses don't make the user wait for a full paragraph before
+ * any audio plays.
  */
 export function splitIntoSentences(text: string): string[] {
   if (!text || !text.trim()) return [];
@@ -49,5 +53,30 @@ export function splitIntoSentences(text: string): string[] {
     }
   }
 
-  return result.filter((s) => s.length > 0);
+  // Secondary pass: break very long chunks on comma boundaries
+  // This ensures the first sentence plays quickly even in verbose responses
+  const MAX_CHUNK = 120;
+  const finalResult: string[] = [];
+  for (const chunk of result) {
+    if (chunk.length <= MAX_CHUNK) {
+      finalResult.push(chunk);
+      continue;
+    }
+    // Split on ", " boundaries
+    const parts = chunk.split(/,\s+/);
+    let acc = "";
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i]!;
+      const candidate = acc ? acc + ", " + part : part;
+      if (candidate.length > MAX_CHUNK && acc.length > 0) {
+        finalResult.push(acc + (i < parts.length - 1 ? "," : ""));
+        acc = part;
+      } else {
+        acc = candidate;
+      }
+    }
+    if (acc) finalResult.push(acc);
+  }
+
+  return finalResult.filter((s) => s.length > 0);
 }

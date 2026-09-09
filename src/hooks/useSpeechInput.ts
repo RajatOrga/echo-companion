@@ -24,6 +24,7 @@ function getRecognitionCtor(): (new () => RecognitionLike) | null {
 export type SpeechInputOptions = {
   continuous?: boolean;
   silenceTimeoutMs?: number;
+  onSpeechStart?: () => void;
 };
 
 /**
@@ -42,11 +43,14 @@ export function useSpeechInput(
   const finalHandler = useRef(onFinal);
   finalHandler.current = onFinal;
 
+  const onSpeechStartHandler = useRef(options?.onSpeechStart);
+  onSpeechStartHandler.current = options?.onSpeechStart;
+
   const continuous = options?.continuous ?? false;
   const continuousRef = useRef(continuous);
   continuousRef.current = continuous;
 
-  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 1400;
+  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 650;
   const silenceTimeoutMsRef = useRef(silenceTimeoutMs);
   silenceTimeoutMsRef.current = silenceTimeoutMs;
 
@@ -54,6 +58,8 @@ export function useSpeechInput(
   const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restartTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldListen = useRef(false);
+  // Track whether we're in a silence gap so onSpeechStart fires only once per utterance
+  const wasSilent = useRef(true);
 
   useEffect(() => {
     const Ctor = getRecognitionCtor();
@@ -97,12 +103,18 @@ export function useSpeechInput(
         // Reset silence timer every time user speaks
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
         if (fullPreview) {
+          // Only fire onSpeechStart once per utterance (when transitioning from silence)
+          if (wasSilent.current) {
+            wasSilent.current = false;
+            onSpeechStartHandler.current?.();
+          }
           silenceTimer.current = setTimeout(() => {
             const toSubmit = (
               accumulator.current + (live ? ` ${live}` : "")
             ).trim();
             if (toSubmit) {
               accumulator.current = "";
+              wasSilent.current = true; // reset for next utterance
               setInterim("");
               finalHandler.current(toSubmit);
             }
@@ -177,6 +189,7 @@ export function useSpeechInput(
   const start = useCallback(() => {
     shouldListen.current = true;
     accumulator.current = "";
+    wasSilent.current = true; // ensure onSpeechStart fires for first utterance
     setInterim("");
     const instance = recognition.current;
     if (!instance) return;
@@ -190,6 +203,7 @@ export function useSpeechInput(
 
   const stop = useCallback(() => {
     shouldListen.current = false;
+    wasSilent.current = true; // reset for next session
     if (silenceTimer.current) clearTimeout(silenceTimer.current);
     if (restartTimer.current) clearTimeout(restartTimer.current);
     accumulator.current = "";

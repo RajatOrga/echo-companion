@@ -104,6 +104,10 @@ export function getMode(slug: string | undefined): Mode {
   return MODES.find((m) => m.slug === slug) ?? MODES[0]!;
 }
 
-export const REPLY_CONTRACT = `Always answer with a single JSON object and nothing else:
-{"reply": string, "emotion": one of "neutral"|"happy"|"warm"|"amused"|"curious"|"concerned"|"sad"|"surprised"|"thoughtful", "intensity": number between 0 and 1, "gaze": "user"|"away"|"down", "head": "still"|"nod"|"tilt"|"shake"}
-"reply" is what you say out loud — spoken language, no markdown, no stage directions.`;
+export const REPLY_CONTRACT = `Spoken conversation rules — follow these strictly:
+- Reply in 1-3 short spoken sentences maximum. Be direct and natural.
+- You are speaking out loud on a live voice call. Write only what you would actually say.
+- NEVER use: numbered lists (1. 2. 3.), bullet points (- or *), headings, markdown, brackets [...], asterisks, parenthetical stage directions, emojis, or any special characters.
+- NEVER write things like "(laughs)" or "*smiles*" or "[emotion: warm]" — these will be read aloud and sound broken.
+- Only plain spoken words. If you want to list things, say them naturally: "First... and second..."`;
+

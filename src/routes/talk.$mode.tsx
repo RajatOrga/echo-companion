@@ -11,7 +11,7 @@ import { TranscriptPanel } from "@/components/TranscriptPanel";
 import { useSpeechInput } from "@/hooks/useSpeechInput";
 import { useVoiceOutput } from "@/hooks/useVoiceOutput";
 import { useAuth } from "@/hooks/useAuth";
-import { runTurn, speak as speakFnServer } from "@/lib/ai.functions";
+import { runTurn, speak as speakFnServer, parseTurn, stripStreamingSpeech } from "@/lib/ai.functions";
 import { EmotionEngine, isEmotionName } from "@/lib/emotion";
 import { getVoiceForMode, hasKey, loadSettings, type KeySettings } from "@/lib/keys";
 import { getMode, REPLY_CONTRACT } from "@/lib/modes";
@@ -155,7 +155,7 @@ function TalkPage() {
       void persist("user", message);
 
       try {
-        const result = await ask({
+        const streamIterable = await ask({
           data: {
             provider: settings.provider,
             apiKey: settings.apiKey,
@@ -166,29 +166,63 @@ function TalkPage() {
           },
         });
 
-        if (isEmotionName(result.emotion)) {
-          engineRef.current.nudge(result.emotion, result.intensity);
-        }
-        gazeRef.current = result.gaze;
-        setHeadGesture(result.head);
-        setGestureKey((k) => k + 1);
-
-        setCaptions((prev) => [
-          ...prev,
-          { id: crypto.randomUUID(), role: "assistant", content: result.reply },
-        ]);
-        turnsRef.current = [...turnsRef.current, { role: "assistant", content: result.reply }];
-        void persist("assistant", result.reply, result.emotion, result.intensity);
-
+        // Switch from "thinking" to "speaking" in one React batch to avoid flicker
         setBusy(false);
         setSpeaking(true);
+
+        const aiId = crypto.randomUUID();
+        setCaptions((prev) => [...prev, { id: aiId, role: "assistant", content: "" }]);
+
+        let fullText = "";
+        // Use a ref-like object so cleanStream closure always reads the latest parsed values
+        let parsed = { reply: "", emotion: "neutral", intensity: 0.5, gaze: "user", head: "still" };
+        let previousReplyLength = 0;
+
+        const cleanStream = async function* () {
+          for await (const chunk of streamIterable) {
+            fullText += chunk;
+            const cleanFull = stripStreamingSpeech(fullText);
+            parsed = parseTurn(fullText);
+
+            const newText = cleanFull.slice(previousReplyLength);
+            if (newText.length > 0) {
+              if (isEmotionName(parsed.emotion)) {
+                engineRef.current.nudge(parsed.emotion as any, parsed.intensity);
+              }
+              gazeRef.current = parsed.gaze;
+              if (parsed.head !== "still") {
+                setHeadGesture(parsed.head);
+                setGestureKey((k) => k + 1);
+              }
+
+              yield newText;
+              previousReplyLength = cleanFull.length;
+            }
+
+            setCaptions((prev) => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && last.id === aiId) last.content = cleanFull;
+              return next;
+            });
+          }
+        };
+
         const activeVoice = getVoiceForMode(settings, mode);
-        await speak(result.reply, settings, {
+        await speak(cleanStream(), settings, {
           voice: activeVoice,
-          emotion: result.emotion,
-          intensity: result.intensity,
+          // Note: emotion/intensity are passed from opts but the synthesizer reads them
+          // at synthesis time — we pass "warm" as a sensible default; the real emotion
+          // was already applied live to the EmotionEngine during streaming above.
+          emotion: "warm",
+          intensity: 0.6,
           browser: mode.voice.browser,
         });
+
+        // NOW parsed has the fully-streamed final values — persist them
+        turnsRef.current = [...turnsRef.current, { role: "assistant", content: parsed.reply }];
+        void persist("assistant", parsed.reply, parsed.emotion, parsed.intensity);
+
         setSpeaking(false);
         engineRef.current.settle(0.2);
         gazeRef.current = "user";
@@ -212,7 +246,12 @@ function TalkPage() {
 
   const speech = useSpeechInput((text) => void send(text), {
     continuous: handsFree,
-    silenceTimeoutMs: 1400,
+    silenceTimeoutMs: 600,
+    onSpeechStart: () => {
+      // Instant Barge-in / Interruption: silence avatar when user speaks
+      stopSpeaking();
+      setSpeaking(false);
+    },
   });
   speechRef.current = { start: speech.start, stop: speech.stop, supported: speech.supported };
 

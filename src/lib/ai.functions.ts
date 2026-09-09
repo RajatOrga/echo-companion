@@ -27,33 +27,93 @@ export type TurnResult = {
   head: string;
 };
 
-function parseTurn(raw: string): TurnResult {
-  const fallback: TurnResult = {
-    reply: raw.trim(),
-    emotion: "neutral",
-    intensity: 0.5,
-    gaze: "user",
-    head: "still",
-  };
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start === -1 || end <= start) return fallback;
-  try {
-    const parsed = JSON.parse(raw.slice(start, end + 1)) as Partial<TurnResult>;
-    if (typeof parsed.reply !== "string" || !parsed.reply.trim()) return fallback;
-    return {
-      reply: parsed.reply.trim(),
-      emotion: typeof parsed.emotion === "string" ? parsed.emotion : "neutral",
-      intensity:
-        typeof parsed.intensity === "number" && Number.isFinite(parsed.intensity)
-          ? Math.min(Math.max(parsed.intensity, 0), 1)
-          : 0.5,
-      gaze: typeof parsed.gaze === "string" ? parsed.gaze : "user",
-      head: typeof parsed.head === "string" ? parsed.head : "still",
-    };
-  } catch {
-    return fallback;
+export function stripSpeechText(text: string): string {
+  return text
+    .replace(/\[(emotion|intensity|gaze|head):\s*[^\]]+\]/gi, "") // strip metadata tags
+    .replace(/\[[^\]]*\]/g, "") // strip any brackets
+    .replace(/\*[^*]*\*/g, "")  // strip stage directions (*chuckles*, etc)
+    .replace(/```[\s\S]*?```/g, "") // strip code blocks
+    .replace(/[#*_~`]/g, "")    // strip markdown symbols
+    .replace(/\s+/g, " ")       // collapse spaces
+    .trim();
+}
+
+/**
+ * Stream-safe speech stripper: removes closed brackets AND suppresses
+ * any trailing unclosed '[' or '*' so incomplete tags are NEVER voiced.
+ */
+export function stripStreamingSpeech(text: string): string {
+  let s = text.replace(/\[[^\]]*$/, "").replace(/\*[^*]*$/, "");
+  return stripSpeechText(s);
+}
+
+export function inferEmotionAndGesture(text: string): { emotion: string; intensity: number; gaze: string; head: string } {
+  const lower = text.toLowerCase();
+
+  let emotion = "warm";
+  let intensity = 0.6;
+  let head = "still";
+  let gaze = "user";
+
+  if (/\b(haha|hehe|funny|joke|silly|kidding|lol|rofl|giggle)\b/.test(lower)) {
+    emotion = "amused";
+    intensity = 0.8;
+    head = "nod";
+  } else if (/\b(yay|awesome|great|wonderful|love|glad|happy|cool|sweet|fantastic)\b/.test(lower)) {
+    emotion = "happy";
+    intensity = 0.75;
+    head = "nod";
+  } else if (/\?|(\b(wonder|curious|how come|what if|really\?)\b)/.test(lower)) {
+    emotion = "curious";
+    intensity = 0.7;
+    head = "tilt";
+  } else if (/\b(sorry|worried|oh no|are you okay|sad|hurt|miss you|rough|tough)\b/.test(lower)) {
+    emotion = "concerned";
+    intensity = 0.7;
+    head = "tilt";
+    gaze = "down";
+  } else if (/\b(hmm|perhaps|maybe|consider|think|interesting)\b/.test(lower)) {
+    emotion = "thoughtful";
+    intensity = 0.6;
+    head = "tilt";
+    gaze = "away";
+  } else if (/\b(no|never|nah|can't|don't|not really|impossible)\b/.test(lower)) {
+    head = "shake";
+  } else if (/\b(yes|yeah|yep|totally|definitely|absolutely|agree|of course)\b/.test(lower)) {
+    head = "nod";
   }
+
+  return { emotion, intensity, gaze, head };
+}
+
+export function parseTurn(raw: string): TurnResult {
+  const text = raw.trim();
+  const inferred = inferEmotionAndGesture(text);
+
+  const result: TurnResult = {
+    reply: "",
+    emotion: inferred.emotion,
+    intensity: inferred.intensity,
+    gaze: inferred.gaze,
+    head: inferred.head,
+  };
+
+  // If explicit tags were present, allow them to override
+  const tagRegex = /\[(emotion|intensity|gaze|head):\s*([^\]]+)\]/gi;
+  let match;
+
+  while ((match = tagRegex.exec(text)) !== null) {
+    const key = match[1]!.toLowerCase();
+    const value = match[2]!.trim().toLowerCase();
+    if (key === "emotion") result.emotion = value;
+    if (key === "intensity") result.intensity = Math.min(1, Math.max(0, parseFloat(value) || 0.5));
+    if (key === "gaze") result.gaze = value;
+    if (key === "head") result.head = value;
+  }
+
+  // Pure spoken words only — never leak tags into speech
+  result.reply = stripSpeechText(text);
+  return result;
 }
 
 async function failure(res: Response): Promise<never> {
@@ -69,7 +129,7 @@ async function failure(res: Response): Promise<never> {
   throw new Error(message || `Provider returned ${res.status}`);
 }
 
-async function chat(data: z.infer<typeof ChatInput>): Promise<TurnResult> {
+async function chat(data: z.infer<typeof ChatInput>): Promise<AsyncGenerator<string, void, unknown>> {
     const { provider, apiKey, model, system, messages } = data;
     const base = (data.baseUrl || "").replace(/\/+$/, "");
 
@@ -86,17 +146,41 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<TurnResult> {
           max_tokens: 700,
           system,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          stream: true,
         }),
       });
       if (!res.ok) await failure(res);
-      const json = (await res.json()) as { content?: { text?: string }[] };
-      return parseTurn(json.content?.map((c) => c.text ?? "").join("") ?? "");
+      return (async function* () {
+        const reader = res.body?.getReader();
+        if (!reader) return;
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const data = trimmed.slice(6);
+            if (data === "[DONE]") return;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                yield parsed.delta.text;
+              }
+            } catch {}
+          }
+        }
+      })();
     }
 
     if (provider === "gemini") {
       const root = base || "https://generativelanguage.googleapis.com/v1beta";
       const res = await fetch(
-        `${root}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        `${root}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -106,17 +190,34 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<TurnResult> {
               role: m.role === "assistant" ? "model" : "user",
               parts: [{ text: m.content }],
             })),
-            generationConfig: { responseMimeType: "application/json", maxOutputTokens: 700 },
+            generationConfig: { maxOutputTokens: 700 },
           }),
         },
       );
       if (!res.ok) await failure(res);
-      const json = (await res.json()) as {
-        candidates?: { content?: { parts?: { text?: string }[] } }[];
-      };
-      const text =
-        json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-      return parseTurn(text);
+      return (async function* () {
+        const reader = res.body?.getReader();
+        if (!reader) return;
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const data = trimmed.slice(6);
+            try {
+              const parsed = JSON.parse(data);
+              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) yield text;
+            } catch {}
+          }
+        }
+      })();
     }
 
     // openai + any OpenAI-compatible endpoint
@@ -127,14 +228,35 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<TurnResult> {
       body: JSON.stringify({
         model,
         messages: [{ role: "system", content: system }, ...messages],
-        response_format: { type: "json_object" },
+        stream: true,
       }),
     });
     if (!res.ok) await failure(res);
-    const json = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-  return parseTurn(json.choices?.[0]?.message?.content ?? "");
+    
+    return (async function* () {
+      const reader = res.body?.getReader();
+      if (!reader) return;
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") return;
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) yield content;
+          } catch {}
+        }
+      }
+    })();
 }
 
 export const runTurn = createServerFn({ method: "POST" })
@@ -181,12 +303,23 @@ const SpeakInput = z.object({
   intensity: z.number().optional(),
 });
 
+// Module-level Edge TTS connection cache (eliminates ~150ms handshake per sentence)
+// Typed as unknown to avoid importing the class; cast locally after dynamic import
+let edgeTtsCache: unknown = null;
+let edgeTtsCacheVoice: string | null = null;
+
+
 export const speak = createServerFn({ method: "POST" })
   .validator((input: unknown) => SpeakInput.parse(input))
   .handler(async ({ data }): Promise<{ audio: string; mimeType: string }> => {
+    const cleanText = stripSpeechText(data.text);
+    if (!cleanText) {
+      return { audio: "", mimeType: "audio/wav" };
+    }
+
     if (data.ttsProvider === "kokoro") {
       const tts = await getKokoro();
-      const rawAudio = await tts.generate(data.text, {
+      const rawAudio = await tts.generate(cleanText, {
         voice: data.voice || "af_heart",
       });
       const wavBuffer = Buffer.from(rawAudio.toWav());
@@ -195,23 +328,27 @@ export const speak = createServerFn({ method: "POST" })
 
     if (data.ttsProvider === "edge") {
       const { MsEdgeTTS, OUTPUT_FORMAT } = await import("msedge-tts");
-      const tts = new MsEdgeTTS();
-      await tts.setMetadata(
-        data.voice || "en-US-AvaMultilingualNeural",
-        OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3,
-      );
-      const { audioStream } = tts.toStream(data.text);
+      // Cache Edge TTS instance per voice to avoid reconnecting on every sentence
+      const voiceKey = data.voice || "en-US-AvaMultilingualNeural";
+      if (!edgeTtsCache || edgeTtsCacheVoice !== voiceKey) {
+        const instance = new MsEdgeTTS();
+        await instance.setMetadata(voiceKey, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+        edgeTtsCache = instance;
+        edgeTtsCacheVoice = voiceKey;
+      }
+      const tts = edgeTtsCache as InstanceType<typeof MsEdgeTTS>;
+      const { audioStream } = tts.toStream(cleanText);
       const chunks: Buffer[] = [];
       await new Promise<void>((resolve, reject) => {
         audioStream.on("data", (chunk: Buffer) => chunks.push(chunk));
         audioStream.on("end", () => resolve());
-        audioStream.on("error", reject);
+        audioStream.on("error", (err: unknown) => {
+          // If stream errors, reset cache so next call reconnects
+          edgeTtsCache = null;
+          edgeTtsCacheVoice = null;
+          reject(err);
+        });
       });
-      try {
-        tts.close();
-      } catch {
-        /* close if open */
-      }
       const buffer = Buffer.concat(chunks);
       return { audio: buffer.toString("base64"), mimeType: "audio/mpeg" };
     }
@@ -240,7 +377,7 @@ export const speak = createServerFn({ method: "POST" })
           method: "POST",
           headers: { "content-type": "application/json", "xi-api-key": data.ttsKey },
           body: JSON.stringify({
-            text: data.text,
+            text: cleanText,
             model_id: "eleven_turbo_v2_5",
             voice_settings: {
               stability,
@@ -264,7 +401,7 @@ export const speak = createServerFn({ method: "POST" })
         headers: { "content-type": "application/json", authorization: `Bearer ${data.ttsKey}` },
         body: JSON.stringify({
           model: "tts-1",
-          input: data.text,
+          input: cleanText,
           voice: data.voice,
           response_format: "mp3",
           speed,
@@ -286,10 +423,13 @@ const TestInput = ChatInput.pick({
 export const testConnection = createServerFn({ method: "POST" })
   .validator((input: unknown) => TestInput.parse(input))
   .handler(async ({ data }): Promise<{ ok: true; sample: string }> => {
-    const result = await chat({
+    const stream = await chat({
       ...data,
-      system: 'Reply with JSON only: {"reply":"Hello, I can hear you.","emotion":"warm","intensity":0.5,"gaze":"user","head":"nod"}',
+      system: 'Reply with exactly: [emotion: warm] Hello, I can hear you.',
       messages: [{ role: "user", content: "Say hello." }],
     });
-    return { ok: true, sample: result.reply };
+    let full = "";
+    for await (const chunk of stream) full += chunk;
+    const result = parseTurn(full);
+    return { ok: true, sample: result.reply || full };
   });

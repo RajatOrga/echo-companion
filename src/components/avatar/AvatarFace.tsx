@@ -151,6 +151,7 @@ interface BonesDict {
   eyeballL: THREE.Bone | null;
   eyeballR: THREE.Bone | null;
   isBip: boolean;
+  isBipPosed?: boolean;
 }
 
   // Locate skeletal bones for posing and lifelike head/face movement across rigs
@@ -291,26 +292,44 @@ interface BonesDict {
     };
     const d = (deg: number) => deg * (Math.PI / 180);
 
-    if (bones.isBip) {
-      // 1. Pose legs to sit comfortably on chair
+    // Detect if this is Mint / companion_female rig (Unity Humanoid naming)
+    const isCompanion = !!(
+      bones.leftThigh?.name.toLowerCase().includes("leftupleg") ||
+      bones.leftCalf?.name.toLowerCase().includes("leftleg") ||
+      (bones.leftArm?.name.toLowerCase() === "leftarm" &&
+        bones.leftForearm?.name.toLowerCase() === "leftforearm")
+    );
+
+    if (isCompanion) {
+      // 1. Pose legs to sit comfortably on chair (thighs horizontal, calves vertical)
+      rot(bones.leftThigh, d(6.47 - 82), 0, d(-176.15));
+      rot(bones.leftCalf, d(-4.32 - 85), d(0.04), d(-0.11));
+
+      rot(bones.rightThigh, d(6.47 - 82), 0, d(176.15));
+      rot(bones.rightCalf, d(-4.32 - 85), d(-0.04), d(0.11));
+
+      // 2. Pose arms to rest naturally on lap (symmetrical, hands forward and flat)
+      rot(bones.leftArm, d(68), d(12), d(-15));
+      rot(bones.leftForearm, d(1.96 + 35), d(-0.61), d(27.51 - 50));
+
+      rot(bones.rightArm, d(68), d(-12), d(15));
+      rot(bones.rightForearm, d(1.96 + 35), d(0.61), d(-27.51 + 50));
+
+      // 3. Natural upright spine & gentle head tilt
+      rot(bones.spine1, d(-4.17 + 5), 0, 0);
+      rot(bones.head, d(-6.12), 0, d(2.5));
+    } else if (bones.isBip) {
       rot(bones.leftThigh, -Math.PI, 0, d(179.6 - 82));
       rot(bones.rightThigh, -Math.PI, 0, d(179.6 - 82));
       rot(bones.leftCalf, 0, 0, d(-2.3 + 86));
       rot(bones.rightCalf, 0, 0, d(-2.3 + 86));
 
-      // 2. Pose arms to rest naturally on lap instead of locked in A-pose
-      rot(bones.leftArm, d(5.1), d(8), d(-62));
-      rot(bones.rightArm, d(-5.1), d(-8), d(-62));
-      rot(bones.leftForearm, 0, d(30), d(55));
-      rot(bones.rightForearm, 0, d(-30), d(55));
-
-      // 3. Slight forward lean in spine for natural seated posture
-      rotAdd(bones.spine1, "x", 6);
-
-      // 4. Subtle head tilt — adds life to the resting pose
-      rotAdd(bones.head, "z", 3);
+      rot(bones.leftArm, d(68), d(12), d(-15));
+      rot(bones.leftForearm, d(37), d(-0.6), d(-22.5));
+      rot(bones.rightArm, d(68), d(-12), d(15));
+      rot(bones.rightForearm, d(37), d(0.6), d(22.5));
     } else {
-      // Standard rigs (Mixamo / ReadyPlayerMe / Daz Genesis)
+      // Standard rigs (Mixamo / ReadyPlayerMe)
       rot(bones.leftArm, 1.31, 0.19, 0.12);
       rot(bones.rightArm, 1.31, -0.19, -0.12);
       rot(bones.leftForearm, 0.18, 0.12, 0.38);
@@ -320,6 +339,19 @@ interface BonesDict {
       rot(bones.leftCalf, -1.42, 0, 0);
       rot(bones.rightCalf, -1.42, 0, 0);
     }
+
+    // Reset cached initial rotations so useFrame recaptures post-pose values
+    initialSpineRot.current = null;
+    initialSpine1Rot.current = null;
+    initialShoulderLRot.current = null;
+    initialShoulderRRot.current = null;
+    initialLeftArmRot.current = null;
+    initialRightArmRot.current = null;
+    initialLeftForearmRot.current = null;
+    initialRightForearmRot.current = null;
+    initialHeadRot.current = null;
+    initialNeckRot.current = null;
+    poseApplied.current = true;
   }, [bones]);
 
   // Gesture state management
@@ -347,6 +379,16 @@ interface BonesDict {
   const initialLowerEyelidRPos = useRef<THREE.Vector3 | null>(null);
   const initialBrowLPos = useRef<THREE.Vector3 | null>(null);
   const initialBrowRPos = useRef<THREE.Vector3 | null>(null);
+  const initialSpineRot = useRef<THREE.Euler | null>(null);
+  const initialSpine1Rot = useRef<THREE.Euler | null>(null);
+  const initialShoulderLRot = useRef<THREE.Euler | null>(null);
+  const initialShoulderRRot = useRef<THREE.Euler | null>(null);
+  const initialLeftArmRot = useRef<THREE.Euler | null>(null);
+  const initialRightArmRot = useRef<THREE.Euler | null>(null);
+  const initialLeftForearmRot = useRef<THREE.Euler | null>(null);
+  const initialRightForearmRot = useRef<THREE.Euler | null>(null);
+  // Set to true after seated-pose useEffect runs so useFrame captures post-pose values
+  const poseApplied = useRef<boolean>(false);
   const listeningNodTimer = useRef<number>(4.0 + Math.random() * 3.0);
   const postureShiftTimer = useRef<number>(8.0 + Math.random() * 6.0);
   const currentLean = useRef<number>(0);
@@ -388,6 +430,9 @@ interface BonesDict {
     const dt = Math.min(delta, 0.05);
     const weights = engine.tick(dt);
     const t = performance.now() / 1000;
+
+    // Don't animate bones until the seated pose useEffect has run at least once
+    const poseReady = poseApplied.current;
 
     // Apply morph targets for facial expressions and lip-sync
     for (const { mesh, map } of morphTargets) {
@@ -478,6 +523,9 @@ interface BonesDict {
     }
 
     // 1. Gesture Offsets Calculation
+    // Only animate body/head bones after seated pose has been applied
+    if (!poseReady) return;
+
     let gestureHeadPitch = 0;
     let gestureHeadYaw = 0;
     let gestureHeadRoll = 0;
@@ -549,47 +597,90 @@ interface BonesDict {
     if (headBone) {
       if (!initialHeadRot.current) initialHeadRot.current = headBone.rotation.clone();
       const initHead = initialHeadRot.current;
-      if (bones.isBip && initHead) {
-        // Bip001: Z is Up (Yaw), X is Sideways (Pitch), Y is Forward (Roll)
-        headBone.rotation.x = initHead.x - targetHeadX * 0.6;
-        headBone.rotation.z = initHead.z + targetHeadY * 0.7;
-        headBone.rotation.y = initHead.y + gestureHeadRoll * 0.6;
-      } else {
-        headBone.rotation.y += (targetHeadY - headBone.rotation.y) * 0.06;
-        headBone.rotation.x += (targetHeadX - headBone.rotation.x) * 0.06;
-        headBone.rotation.z += (targetHeadZ - headBone.rotation.z) * 0.06;
+      if (initHead) {
+        if (bones.isBip) {
+          // Bip001: Z is Up (Yaw), X is Sideways (Pitch), Y is Forward (Roll)
+          headBone.rotation.x = initHead.x - targetHeadX * 0.6;
+          headBone.rotation.z = initHead.z + targetHeadY * 0.7;
+          headBone.rotation.y = initHead.y + gestureHeadRoll * 0.6;
+        } else {
+          // Lerp toward target offset from initial rest rotation
+          const goalY = initHead.y + targetHeadY;
+          const goalX = initHead.x + targetHeadX;
+          const goalZ = initHead.z + targetHeadZ;
+          headBone.rotation.y += (goalY - headBone.rotation.y) * 0.06;
+          headBone.rotation.x += (goalX - headBone.rotation.x) * 0.06;
+          headBone.rotation.z += (goalZ - headBone.rotation.z) * 0.06;
+        }
       }
     }
     const neckBone = bones.neck;
     if (neckBone) {
       if (!initialNeckRot.current) initialNeckRot.current = neckBone.rotation.clone();
       const initNeck = initialNeckRot.current;
-      if (bones.isBip && initNeck) {
-        neckBone.rotation.x = initNeck.x - targetHeadX * 0.25;
-        neckBone.rotation.z = initNeck.z + targetHeadY * 0.25;
-      } else {
-        neckBone.rotation.y += (targetHeadY * 0.3 - neckBone.rotation.y) * 0.05;
-        neckBone.rotation.x +=
-          (targetHeadX * 0.3 + config.seat.lean * 0.08 + gestureNeckPitch - neckBone.rotation.x) *
-          0.05;
-        neckBone.rotation.z += (targetHeadZ * 0.25 - neckBone.rotation.z) * 0.05;
+      if (initNeck) {
+        if (bones.isBip) {
+          neckBone.rotation.x = initNeck.x - targetHeadX * 0.25;
+          neckBone.rotation.z = initNeck.z + targetHeadY * 0.25;
+        } else {
+          const goalNeckY = initNeck.y + targetHeadY * 0.3;
+          const goalNeckX = initNeck.x + targetHeadX * 0.3 + config.seat.lean * 0.08 + gestureNeckPitch;
+          const goalNeckZ = initNeck.z + targetHeadZ * 0.25;
+          neckBone.rotation.y += (goalNeckY - neckBone.rotation.y) * 0.05;
+          neckBone.rotation.x += (goalNeckX - neckBone.rotation.x) * 0.05;
+          neckBone.rotation.z += (goalNeckZ - neckBone.rotation.z) * 0.05;
+        }
       }
     }
     const spine1Bone = bones.spine1;
     if (spine1Bone) {
-      spine1Bone.rotation.x = breath + config.seat.lean * 0.12 + currentSlouch.current;
-      spine1Bone.rotation.z = Math.sin(t * 0.38) * 0.005 * amp + currentLean.current;
-      spine1Bone.rotation.y = currentLean.current * 0.35;
+      if (!initialSpine1Rot.current) initialSpine1Rot.current = spine1Bone.rotation.clone();
+      const init = initialSpine1Rot.current;
+      if (init) {
+        spine1Bone.rotation.x = init.x + breath + config.seat.lean * 0.12 + currentSlouch.current;
+        spine1Bone.rotation.z = init.z + Math.sin(t * 0.38) * 0.005 * amp + currentLean.current;
+        spine1Bone.rotation.y = init.y + currentLean.current * 0.35;
+      }
     }
     const spineBone = bones.spine;
     if (spineBone) {
-      spineBone.rotation.z = currentLean.current * 0.45;
-      spineBone.rotation.x = currentSlouch.current * 0.5;
+      if (!initialSpineRot.current) initialSpineRot.current = spineBone.rotation.clone();
+      const init = initialSpineRot.current;
+      if (init) {
+        spineBone.rotation.z = init.z + currentLean.current * 0.45;
+        spineBone.rotation.x = init.x + currentSlouch.current * 0.5;
+      }
     }
     const lShoulder = bones.leftShoulder, rShoulder = bones.rightShoulder;
     if (lShoulder && rShoulder) {
-      lShoulder.rotation.z = -currentLean.current * 0.35 + breath * 0.006;
-      rShoulder.rotation.z = currentLean.current * 0.35 - breath * 0.006;
+      if (!initialShoulderLRot.current) initialShoulderLRot.current = lShoulder.rotation.clone();
+      if (!initialShoulderRRot.current) initialShoulderRRot.current = rShoulder.rotation.clone();
+      const initL = initialShoulderLRot.current;
+      const initR = initialShoulderRRot.current;
+      if (initL && initR) {
+        lShoulder.rotation.z = initL.z - currentLean.current * 0.15 + breath * 0.008;
+        rShoulder.rotation.z = initR.z + currentLean.current * 0.15 - breath * 0.008;
+      }
+    }
+
+    // Subtle conversational breathing & gentle arm presence
+    // CRITICAL: use absolute assignment from initial rotation, NOT += (which accumulates to infinity)
+    const jawVal = weights["jawOpen"] ?? 0;
+    if (bones.leftArm && bones.rightArm) {
+      if (!initialLeftArmRot.current) initialLeftArmRot.current = bones.leftArm.rotation.clone();
+      if (!initialRightArmRot.current) initialRightArmRot.current = bones.rightArm.rotation.clone();
+    }
+    if (bones.leftForearm && bones.rightForearm) {
+      if (!initialLeftForearmRot.current) initialLeftForearmRot.current = bones.leftForearm.rotation.clone();
+      if (!initialRightForearmRot.current) initialRightForearmRot.current = bones.rightForearm.rotation.clone();
+      const initLF = initialLeftForearmRot.current;
+      const initRF = initialRightForearmRot.current;
+      if (initLF && initRF) {
+        // Gentle sinusoidal sway offset from the INITIAL (seated) pose — never accumulates
+        const armSway = Math.sin(t * 1.6) * 0.003 * (jawVal > 0.05 ? 1.3 : 0.7);
+        bones.leftForearm.rotation.z = initLF.z + armSway;
+        bones.rightForearm.rotation.z = initRF.z - armSway;
+      }
     }
   });
 

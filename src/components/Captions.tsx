@@ -1,7 +1,15 @@
+import { useEffect, useRef } from "react";
+
 export type Caption = { id: string; role: "user" | "assistant"; content: string };
 
 export function Captions({ items, interim }: { items: Caption[]; interim?: string }) {
   const recent = items.slice(-4);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [items, interim]);
+
   return (
     <div className="pointer-events-none flex w-full max-w-2xl flex-col items-center gap-3 px-6 text-center">
       {recent.map((item, index) => {
@@ -26,6 +34,7 @@ export function Captions({ items, interim }: { items: Caption[]; interim?: strin
       {interim ? (
         <p className="animate-rise text-base italic text-muted-foreground/60">{interim}</p>
       ) : null}
+      <div ref={bottomRef} />
     </div>
   );
 }
