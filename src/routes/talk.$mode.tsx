@@ -241,28 +241,32 @@ function TalkPage() {
         };
 
         const activeVoice = getVoiceForMode(settings, mode);
-        await speak(cleanStream(), settings, {
-          voice: activeVoice,
-          // Note: emotion/intensity are passed from opts but the synthesizer reads them
-          // at synthesis time — we pass "warm" as a sensible default; the real emotion
-          // was already applied live to the EmotionEngine during streaming above.
-          emotion: "warm",
-          intensity: 0.6,
-          browser: mode.voice.browser,
-        });
+        try {
+          await speak(cleanStream(), settings, {
+            voice: activeVoice,
+            // Note: emotion/intensity are passed from opts but the synthesizer reads them
+            // at synthesis time — we pass "warm" as a sensible default; the real emotion
+            // was already applied live to the EmotionEngine during streaming above.
+            emotion: "warm",
+            intensity: 0.6,
+            browser: mode.voice.browser,
+          });
+        } finally {
+          // NOW parsed has the fully-streamed final values — persist them
+          if (parsed.reply) {
+            turnsRef.current = [...turnsRef.current, { role: "assistant", content: parsed.reply }];
+            void persist("assistant", parsed.reply, parsed.emotion, parsed.intensity);
+          }
 
-        // NOW parsed has the fully-streamed final values — persist them
-        turnsRef.current = [...turnsRef.current, { role: "assistant", content: parsed.reply }];
-        void persist("assistant", parsed.reply, parsed.emotion, parsed.intensity);
-
-        setSpeaking(false);
-        engineRef.current.settle(0.2);
-        gazeRef.current = "user";
-        // Hands-free / Live Conversation: hand the turn straight back to the user with small pause
-        if (handsFreeRef.current && speechRef.current?.supported) {
-          setTimeout(() => {
-            if (handsFreeRef.current) speechRef.current?.start();
-          }, 280);
+          setSpeaking(false);
+          engineRef.current.settle(0.2);
+          gazeRef.current = "user";
+          // Hands-free / Live Conversation: hand the turn straight back to the user with small pause
+          if (handsFreeRef.current && speechRef.current?.supported) {
+            setTimeout(() => {
+              if (handsFreeRef.current) speechRef.current?.start();
+            }, 280);
+          }
         }
       } catch (error) {
         setBusy(false);

@@ -324,10 +324,12 @@ interface BonesDict {
       rot(bones.leftCalf, 0, 0, d(-2.3 + 86));
       rot(bones.rightCalf, 0, 0, d(-2.3 + 86));
 
-      rot(bones.leftArm, d(68), d(12), d(-15));
-      rot(bones.leftForearm, d(37), d(-0.6), d(-22.5));
-      rot(bones.rightArm, d(68), d(-12), d(15));
-      rot(bones.rightForearm, d(37), d(0.6), d(22.5));
+      // Bip001 rig (Mint): bone local X aligns along the bone length
+      // Swing arms down and forward to rest naturally on thighs
+      rot(bones.leftArm, d(-88), d(28), d(-100));
+      rot(bones.leftForearm, d(90), 0, d(30));
+      rot(bones.rightArm, d(90), d(30), d(-80));
+      rot(bones.rightForearm, d(90), 0, d(-30));
     } else {
       // Standard rigs (Mixamo / ReadyPlayerMe)
       rot(bones.leftArm, 1.31, 0.19, 0.12);

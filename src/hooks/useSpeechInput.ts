@@ -50,7 +50,7 @@ export function useSpeechInput(
   const continuousRef = useRef(continuous);
   continuousRef.current = continuous;
 
-  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 1200;
+  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 1500;
   const silenceTimeoutMsRef = useRef(silenceTimeoutMs);
   silenceTimeoutMsRef.current = silenceTimeoutMs;
 
@@ -61,29 +61,55 @@ export function useSpeechInput(
   // Track whether we're in a silence gap so onSpeechStart fires only once per utterance
   const wasSilent = useRef(true);
 
-  // Computes adaptive silence timeout based on linguistic cues in the spoken text
+  // Computes adaptive silence timeout based on linguistic completeness cues in the spoken text
   const getAdaptiveDelay = (text: string, base: number) => {
     const trimmed = text.trim().toLowerCase();
     if (!trimmed) return base;
 
-    // If ends with sentence terminal (. ! ?), thought is complete -> brisk 950ms
-    if (/[.!?。！？]$/.test(trimmed)) {
-      return Math.max(950, Math.min(base, 1050));
-    }
+    const words = trimmed.split(/\s+/);
+    const trailingWord = words[words.length - 1] ?? "";
 
-    // Trailing hesitation or connective words indicate user paused mid-thought
-    const trailingWord = trimmed.split(/\s+/).pop() ?? "";
-    const CONTINUING_WORDS = new Set([
-      "and", "or", "like", "so", "because", "but", "if", "when",
-      "that", "then", "with", "for", "as", "to", "um", "uh", "er", "ah", "well"
+    // Connectives, conjunctions, prepositions, auxiliaries, pronouns, or hesitation fillers
+    // indicating the speaker is mid-clause or searching for words
+    const INCOMPLETE_TRAILERS = new Set([
+      // Conjunctions & connectives
+      "and", "or", "but", "nor", "so", "because", "although", "though", "while", "whereas",
+      "if", "unless", "until", "since", "like", "then", "also", "besides", "plus",
+      // Prepositions
+      "in", "on", "at", "to", "for", "of", "with", "about", "between", "into", "through",
+      "after", "before", "above", "below", "from", "up", "down", "off", "over", "under", "by", "as",
+      // Auxiliary verbs & copulas
+      "is", "am", "are", "was", "were", "be", "been", "being",
+      "have", "has", "had", "do", "does", "did",
+      "will", "would", "shall", "should", "can", "could", "may", "might", "must",
+      // Determiners & relative/interrogative pronouns
+      "the", "a", "an", "my", "your", "his", "her", "its", "our", "their",
+      "this", "that", "these", "those", "which", "what", "who", "whom", "whose",
+      "where", "when", "why", "how",
+      // Fillers & hesitations
+      "um", "uh", "er", "ah", "hmm", "well", "actually", "basically", "literally"
     ]);
 
-    if (CONTINUING_WORDS.has(trailingWord) || /[,;:\-—]$/.test(trimmed)) {
-      return Math.max(1500, base + 350);
+    // Punctuation indicating pause mid-thought (comma, ellipsis, dash, colon)
+    const hasMidPunctuation = /[,;:\-—~]$/.test(trimmed) || trimmed.endsWith("...");
+
+    if (INCOMPLETE_TRAILERS.has(trailingWord) || hasMidPunctuation) {
+      // User paused mid-clause or paused to think: give generous breathing room (2.2s - 2.5s)
+      return Math.max(2250, base + 750);
     }
 
-    // Default conversational pause threshold: at least 1200ms
-    return Math.max(1200, base);
+    // Short phrase without punctuation (< 4 words): e.g. "Hey there", "I think", "Wait"
+    if (words.length < 4 && !/[.!?。！？]$/.test(trimmed)) {
+      return Math.max(1850, base + 350);
+    }
+
+    // If ends with sentence terminal (. ! ?), thought is complete -> brisk 1150ms
+    if (/[.!?。！？]$/.test(trimmed)) {
+      return Math.max(1150, Math.min(base, 1300));
+    }
+
+    // Default natural conversational pause threshold: at least 1500ms
+    return Math.max(1500, base);
   };
 
   useEffect(() => {

@@ -197,23 +197,27 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
 
       const sentenceQueue: string[] = [];
       let isStreamComplete = false;
-      let sentenceResolver: (() => void) | null = null;
+      const sentenceWaiters: Array<() => void> = [];
+
+      const notifySentenceWaiters = () => {
+        while (sentenceWaiters.length > 0) {
+          const resolve = sentenceWaiters.shift()!;
+          resolve();
+        }
+      };
 
       const pushSentence = (sentence: string) => {
         const clean = stripSpeechText(sentence);
         if (clean) {
           sentenceQueue.push(clean);
-          if (sentenceResolver) {
-            sentenceResolver();
-            sentenceResolver = null;
-          }
+          notifySentenceWaiters();
         }
       };
 
       const waitForNextSentence = async () => {
         if (sentenceQueue.length > 0) return sentenceQueue.shift()!;
         if (isStreamComplete) return null;
-        await new Promise<void>((resolve) => { sentenceResolver = resolve; });
+        await new Promise<void>((resolve) => { sentenceWaiters.push(resolve); });
         if (sentenceQueue.length > 0) return sentenceQueue.shift()!;
         return null;
       };
@@ -264,39 +268,45 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
             }
           }
           isStreamComplete = true;
-          if (sentenceResolver) sentenceResolver();
+          notifySentenceWaiters();
         }
       };
 
       const audioQueue: AudioBuffer[] = [];
-      let audioResolver: (() => void) | null = null;
+      const audioWaiters: Array<() => void> = [];
+      const backpressureWaiters: Array<() => void> = [];
       let isSynthComplete = false;
+
+      const notifyAudioWaiters = () => {
+        while (audioWaiters.length > 0) {
+          const resolve = audioWaiters.shift()!;
+          resolve();
+        }
+      };
+
+      const notifyBackpressureWaiters = () => {
+        while (backpressureWaiters.length > 0) {
+          const resolve = backpressureWaiters.shift()!;
+          resolve();
+        }
+      };
 
       const pushAudio = (buffer: AudioBuffer) => {
         audioQueue.push(buffer);
-        if (audioResolver) {
-          audioResolver();
-          audioResolver = null;
-        }
+        notifyAudioWaiters();
       };
 
       const waitForNextAudio = async () => {
         if (audioQueue.length > 0) {
           const buf = audioQueue.shift()!;
-          if (audioResolver) {
-            audioResolver();
-            audioResolver = null;
-          }
+          notifyBackpressureWaiters();
           return buf;
         }
         if (isSynthComplete) return null;
-        await new Promise<void>((resolve) => { audioResolver = resolve; });
+        await new Promise<void>((resolve) => { audioWaiters.push(resolve); });
         if (audioQueue.length > 0) {
           const buf = audioQueue.shift()!;
-          if (audioResolver) {
-            audioResolver();
-            audioResolver = null;
-          }
+          notifyBackpressureWaiters();
           return buf;
         }
         return null;
@@ -365,7 +375,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         while (!cancelledRef.current) {
           // Backpressure: cap pre-synthesized audio queue to 3
           while (audioQueue.length >= 3 && !cancelledRef.current) {
-            await new Promise<void>((resolve) => { audioResolver = resolve; });
+            await new Promise<void>((resolve) => { backpressureWaiters.push(resolve); });
           }
           if (cancelledRef.current) break;
 
@@ -377,17 +387,24 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         }
       };
 
+      const isBrowserTts =
+        settings.ttsProvider === "none" ||
+        (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim());
+
       const synthesizer = async () => {
-        const isBrowserTts = settings.ttsProvider === "none" || (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim());
-        // For browser TTS, run single worker to avoid voice overlapping
-        // For remote/edge TTS, run 2 concurrent workers for lookahead prefetching
-        if (isBrowserTts) {
-          await worker();
-        } else {
-          await Promise.all([worker(), worker()]);
+        try {
+          // For browser TTS, run single worker to avoid voice overlapping
+          // For remote/edge TTS, run 2 concurrent workers for lookahead prefetching
+          if (isBrowserTts) {
+            await worker();
+          } else {
+            await Promise.all([worker(), worker()]);
+          }
+        } finally {
+          isSynthComplete = true;
+          notifyAudioWaiters();
+          notifyBackpressureWaiters();
         }
-        isSynthComplete = true;
-        if (audioResolver) audioResolver();
       };
 
       const player = async () => {
@@ -398,9 +415,25 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         }
       };
 
-      void producer();
-      void synthesizer();
-      await player();
+      if (isBrowserTts) {
+        // In browser speech synthesis, browserVoice handles playback sequentially inside synthesizeOne
+        await Promise.all([producer(), synthesizer()]);
+      } else {
+        // In audio buffer mode (Edge, Kokoro, ElevenLabs):
+        // Launch producer and synthesizer concurrently, and stream audio to player
+        const synthTask = Promise.all([producer(), synthesizer()])
+          .catch((err) => {
+            console.error("Speech pipeline error:", err);
+          })
+          .finally(() => {
+            isSynthComplete = true;
+            notifyAudioWaiters();
+            notifyBackpressureWaiters();
+          });
+
+        await player();
+        await synthTask;
+      }
     },
     [cleanup, browserVoice, speakFn, playBuffer, decodeChunk],
   );
