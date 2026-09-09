@@ -24,14 +24,11 @@ function getMorphAliases(name: string): string[] {
   const norm = normalize(name);
   const aliases = new Set<string>([norm]);
 
-  // Strip common 3D vendor / blendshape prefixes:
-  // facs_ctrl_, facs_jnt_, facs_, ectrl_, ejcm_, ctrl_, vrm_, blendshape_, bs_
   const stripped = norm.replace(/^(facsctrl|facsjnt|facs|ectrl|ejcm|ctrl|vrm|blendshape|bs)/, "");
   if (stripped && stripped !== norm) {
     aliases.add(stripped);
   }
 
-  // Generate Left/Right <-> L/R equivalents for ARKit / Daz morph matching
   for (const a of Array.from(aliases)) {
     if (a.endsWith("left")) {
       aliases.add(a.slice(0, -4) + "l");
@@ -69,10 +66,8 @@ function RealisticAvatar({
 }) {
   const modelUrl = config.avatar || "/models/avatars/companion_female.glb";
   const { scene } = useGLTF(modelUrl);
-  // SkeletonUtils.clone ensures SkinnedMesh and bones rebind correctly
   const avatar = useMemo(() => SkeletonUtils.clone(scene), [scene]);
 
-  // Find all skinned meshes with morph targets
   const morphTargets = useMemo<Targets[]>(() => {
     const found: Targets[] = [];
     avatar.traverse((child) => {
@@ -154,8 +149,6 @@ interface BonesDict {
   isBipPosed?: boolean;
 }
 
-  // Locate skeletal bones for posing and lifelike head/face movement across rigs
-  // (ReadyPlayerMe, Daz Genesis 3/8/8.1/9, Mixamo, Unreal, 3ds Max Bip001)
   const bones = useMemo<BonesDict>(() => {
     let head: THREE.Bone | null = null;
     let neck: THREE.Bone | null = null;
@@ -188,15 +181,15 @@ interface BonesDict {
         const n = child.name.toLowerCase();
         if (n.includes("bip001")) isBip = true;
 
-        // Head bone
+        // Head
         if (!head && (n === "head" || n.endsWith("_head") || n.includes("mixamorighead") || n.includes("genesis8_head") || n.includes("genesis9_head") || n.includes("head_076") || (n.includes("head") && !n.includes("end")))) {
           head = child as THREE.Bone;
         }
-        // Neck bone
+        // Neck
         else if (!neck && (n === "neck" || n === "neckupper" || n === "necklower" || n.endsWith("_neck") || n.includes("mixamorigneck") || n.includes("neck_075") || (n.includes("neck") && !n.includes("end")))) {
           neck = child as THREE.Bone;
         }
-        // Lower Spine / Abdomen
+        // Lower Spine
         else if (!spine && (n === "spine" || n === "abdomenlower" || n === "abdomen" || n.includes("mixamorigspine") || n.includes("spine_06") || n.includes("spine_05"))) {
           spine = child as THREE.Bone;
         }
@@ -219,24 +212,53 @@ interface BonesDict {
           rightArm = child as THREE.Bone;
         }
         // Forearms
-        else if (!leftForearm && (n === "leftforearm" || n === "lforearmbend" || n.includes("mixamorigleftforearm") || (n.includes("forearm") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))))) {
+        // NOTE: VRoid uses "LowerArm" not "Forearm" (e.g. J_Bip_L_LowerArm)
+        else if (!leftForearm && (
+          n === "leftforearm" || n === "lforearmbend" ||
+          n.includes("mixamorigleftforearm") ||
+          (n.includes("forearm") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))) ||
+          (n.includes("lowerarm") && (n.includes("-l-") || n.includes("_l_") || n.includes("left")))
+        )) {
           leftForearm = child as THREE.Bone;
         }
-        else if (!rightForearm && (n === "rightforearm" || n === "rforearmbend" || n.includes("mixamorigrightforearm") || (n.includes("forearm") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))))) {
+        else if (!rightForearm && (
+          n === "rightforearm" || n === "rforearmbend" ||
+          n.includes("mixamorigrightforearm") ||
+          (n.includes("forearm") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))) ||
+          (n.includes("lowerarm") && (n.includes("-r-") || n.includes("_r_") || n.includes("right")))
+        )) {
           rightForearm = child as THREE.Bone;
         }
         // Thighs
-        else if (!leftThigh && ((n.includes("thigh") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))) || n.includes("leftupleg"))) {
+        // NOTE: VRoid uses "UpperLeg" not "Thigh" (e.g. J_Bip_L_UpperLeg)
+        else if (!leftThigh && (
+          (n.includes("thigh") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))) ||
+          n.includes("leftupleg") ||
+          (n.includes("upperleg") && (n.includes("-l-") || n.includes("_l_") || n.includes("left")))
+        )) {
           leftThigh = child as THREE.Bone;
         }
-        else if (!rightThigh && ((n.includes("thigh") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))) || n.includes("rightupleg"))) {
+        else if (!rightThigh && (
+          (n.includes("thigh") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))) ||
+          n.includes("rightupleg") ||
+          (n.includes("upperleg") && (n.includes("-r-") || n.includes("_r_") || n.includes("right")))
+        )) {
           rightThigh = child as THREE.Bone;
         }
         // Calves
-        else if (!leftCalf && ((n.includes("calf") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))) || n.includes("leftleg"))) {
+        // NOTE: VRoid uses "LowerLeg" not "Calf" (e.g. J_Bip_L_LowerLeg)
+        else if (!leftCalf && (
+          (n.includes("calf") && (n.includes("-l-") || n.includes("_l_") || n.includes("left"))) ||
+          n.includes("leftleg") ||
+          (n.includes("lowerleg") && (n.includes("-l-") || n.includes("_l_") || n.includes("left")))
+        )) {
           leftCalf = child as THREE.Bone;
         }
-        else if (!rightCalf && ((n.includes("calf") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))) || n.includes("rightleg"))) {
+        else if (!rightCalf && (
+          (n.includes("calf") && (n.includes("-r-") || n.includes("_r_") || n.includes("right"))) ||
+          n.includes("rightleg") ||
+          (n.includes("lowerleg") && (n.includes("-r-") || n.includes("_r_") || n.includes("right")))
+        )) {
           rightCalf = child as THREE.Bone;
         }
         // Face joints
@@ -281,65 +303,98 @@ interface BonesDict {
     };
   }, [avatar]);
 
-  // Seated pose setup: bends thighs & knees to sit on the chair, rests arms on lap
+  // ---------------------------------------------------------------------------
+  // Seated-pose setup
+  // Applies ONCE after model loads. Bends thighs/knees to sit, rests arms on lap.
+  // Three rig branches:
+  //   1. isVRoid  — VRM / VRoid (J_Bip_* naming, T-pose bind)
+  //   2. isCompanion — Unity Humanoid (LeftUpLeg / LeftLeg naming)
+  //   3. isBip    — 3ds Max Biped (Bip001 naming, Z-up convention)
+  //   4. else     — Mixamo / ReadyPlayerMe (standard GLTF)
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    // Helper avoids TS narrowing bug where Bone|null collapses to 'never'
     const rot = (bone: THREE.Bone | null, x: number, y: number, z: number) => {
       if (bone) bone.rotation.set(x, y, z);
     };
-    const rotAdd = (bone: THREE.Bone | null, axis: "x" | "y" | "z", deg: number) => {
-      if (bone) bone.rotation[axis] += deg * (Math.PI / 180);
-    };
     const d = (deg: number) => deg * (Math.PI / 180);
 
-    // Detect if this is Mint / companion_female rig (Unity Humanoid naming)
-    const isCompanion = !!(
+    // Detect rig type
+    const armName   = bones.leftArm?.name?.toLowerCase()   ?? "";
+    const thighName = bones.leftThigh?.name?.toLowerCase() ?? "";
+    const headName  = bones.head?.name?.toLowerCase()      ?? "";
+
+    // VRoid / VRM: all bones start with "J_Bip_"
+    const isVRoid =
+      armName.startsWith("j_bip") ||
+      thighName.startsWith("j_bip") ||
+      headName.startsWith("j_bip");
+
+    // Unity Humanoid (companion_female / mint non-VRoid)
+    const isCompanion = !isVRoid && !!(
       bones.leftThigh?.name.toLowerCase().includes("leftupleg") ||
       bones.leftCalf?.name.toLowerCase().includes("leftleg") ||
       (bones.leftArm?.name.toLowerCase() === "leftarm" &&
         bones.leftForearm?.name.toLowerCase() === "leftforearm")
     );
 
-    if (isCompanion) {
-      // 1. Pose legs to sit comfortably on chair (thighs horizontal, calves vertical)
+    if (isVRoid) {
+      // VRoid T-pose: arms point straight out horizontally.
+      // Rotating the UpperArm around its local Z axis swings the arm downward.
+      // +Z for the left arm, -Z for the right arm.
+      // Values tuned for standard VRoid shoulder joint offset (~30 deg).
+      rot(bones.leftArm,     d(0),   d(12),  d(82));
+      rot(bones.leftForearm, d(0),   d(-8),  d(18));
+      rot(bones.rightArm,    d(0),  d(-12), d(-82));
+      rot(bones.rightForearm, d(0),  d(8),  d(-18));
+
+      // Thighs & calves use same GLTF Y-up convention as Mixamo
+      rot(bones.leftThigh,  1.48,  0.08,  0.08);
+      rot(bones.rightThigh, 1.48, -0.08, -0.08);
+      rot(bones.leftCalf,  -1.42,  0,     0);
+      rot(bones.rightCalf, -1.42,  0,     0);
+
+      // Gently upright interviewer posture
+      rot(bones.spine1, d(-3), 0, 0);
+      rot(bones.head,   d(-5), 0, d(2.5));
+
+    } else if (isCompanion) {
+      // Unity Humanoid rig
       rot(bones.leftThigh, d(6.47 - 82), 0, d(-176.15));
-      rot(bones.leftCalf, d(-4.32 - 85), d(0.04), d(-0.11));
-
+      rot(bones.leftCalf,  d(-4.32 - 85), d(0.04), d(-0.11));
       rot(bones.rightThigh, d(6.47 - 82), 0, d(176.15));
-      rot(bones.rightCalf, d(-4.32 - 85), d(-0.04), d(0.11));
+      rot(bones.rightCalf,  d(-4.32 - 85), d(-0.04), d(0.11));
 
-      // 2. Pose arms to rest naturally on lap (symmetrical, hands forward and flat)
-      rot(bones.leftArm, d(68), d(12), d(-15));
-      rot(bones.leftForearm, d(1.96 + 35), d(-0.61), d(27.51 - 50));
+      rot(bones.leftArm,     d(68),       d(12),        d(-15));
+      rot(bones.leftForearm, d(1.96 + 35), d(-0.61),    d(27.51 - 50));
+      rot(bones.rightArm,    d(68),       d(-12),       d(15));
+      rot(bones.rightForearm, d(1.96 + 35), d(0.61),   d(-27.51 + 50));
 
-      rot(bones.rightArm, d(68), d(-12), d(15));
-      rot(bones.rightForearm, d(1.96 + 35), d(0.61), d(-27.51 + 50));
-
-      // 3. Natural upright spine & gentle head tilt
       rot(bones.spine1, d(-4.17 + 5), 0, 0);
-      rot(bones.head, d(-6.12), 0, d(2.5));
-    } else if (bones.isBip) {
-      rot(bones.leftThigh, -Math.PI, 0, d(179.6 - 82));
-      rot(bones.rightThigh, -Math.PI, 0, d(179.6 - 82));
-      rot(bones.leftCalf, 0, 0, d(-2.3 + 86));
-      rot(bones.rightCalf, 0, 0, d(-2.3 + 86));
+      rot(bones.head,   d(-6.12), 0, d(2.5));
 
-      // Bip001 rig (Mint): bone local X aligns along the bone length
-      // Swing arms down and forward to rest naturally on thighs
-      rot(bones.leftArm, d(-88), d(28), d(-100));
-      rot(bones.leftForearm, d(90), 0, d(30));
-      rot(bones.rightArm, d(90), d(30), d(-80));
-      rot(bones.rightForearm, d(90), 0, d(-30));
+    } else if (bones.isBip) {
+      // 3ds Max Biped: Z is the vertical axis in bone-local space.
+      rot(bones.leftThigh,  -Math.PI, 0, d(179.6 - 82));
+      rot(bones.rightThigh, -Math.PI, 0, d(179.6 - 82));
+      rot(bones.leftCalf,   0, 0, d(-2.3 + 86));
+      rot(bones.rightCalf,  0, 0, d(-2.3 + 86));
+
+      // Symmetric arm rest — left mirrors right in Y and Z
+      rot(bones.leftArm,     d(90), d(-30),  d(80));
+      rot(bones.leftForearm, d(90),  0,      d(30));
+      rot(bones.rightArm,    d(90),  d(30), d(-80));
+      rot(bones.rightForearm, d(90), 0,     d(-30));
+
     } else {
-      // Standard rigs (Mixamo / ReadyPlayerMe)
-      rot(bones.leftArm, 1.31, 0.19, 0.12);
-      rot(bones.rightArm, 1.31, -0.19, -0.12);
-      rot(bones.leftForearm, 0.18, 0.12, 0.38);
+      // Standard Mixamo / ReadyPlayerMe (GLTF Y-up)
+      rot(bones.leftArm,     1.31,  0.19,  0.12);
+      rot(bones.rightArm,    1.31, -0.19, -0.12);
+      rot(bones.leftForearm,  0.18,  0.12,  0.38);
       rot(bones.rightForearm, 0.18, -0.12, -0.38);
-      rot(bones.leftThigh, 1.48, 0.1, 0.08);
-      rot(bones.rightThigh, 1.48, -0.1, -0.08);
-      rot(bones.leftCalf, -1.42, 0, 0);
-      rot(bones.rightCalf, -1.42, 0, 0);
+      rot(bones.leftThigh,   1.48,  0.1,   0.08);
+      rot(bones.rightThigh,  1.48, -0.1,  -0.08);
+      rot(bones.leftCalf,   -1.42,  0,     0);
+      rot(bones.rightCalf,  -1.42,  0,     0);
     }
 
     // Reset cached initial rotations so useFrame recaptures post-pose values
@@ -356,7 +411,6 @@ interface BonesDict {
     poseApplied.current = true;
   }, [bones]);
 
-  // Gesture state management
   const gestureState = useRef<{
     type: "nod" | "tilt" | "shake" | "none";
     startTime: number;
@@ -389,7 +443,6 @@ interface BonesDict {
   const initialRightArmRot = useRef<THREE.Euler | null>(null);
   const initialLeftForearmRot = useRef<THREE.Euler | null>(null);
   const initialRightForearmRot = useRef<THREE.Euler | null>(null);
-  // Set to true after seated-pose useEffect runs so useFrame captures post-pose values
   const poseApplied = useRef<boolean>(false);
   const listeningNodTimer = useRef<number>(4.0 + Math.random() * 3.0);
   const postureShiftTimer = useRef<number>(8.0 + Math.random() * 6.0);
@@ -398,32 +451,16 @@ interface BonesDict {
   const currentSlouch = useRef<number>(0);
   const targetSlouch = useRef<number>(0);
 
-  // Trigger explicit gestures from AI response
   useEffect(() => {
     if (gestureKey !== undefined && gestureKey !== lastGestureTrigger.current) {
       lastGestureTrigger.current = gestureKey;
       const now = performance.now() / 1000;
       if (headGesture === "nod") {
-        gestureState.current = {
-          type: "nod",
-          startTime: now,
-          duration: 1.35,
-          intensity: 1.0,
-        };
+        gestureState.current = { type: "nod", startTime: now, duration: 1.35, intensity: 1.0 };
       } else if (headGesture === "tilt") {
-        gestureState.current = {
-          type: "tilt",
-          startTime: now,
-          duration: 2.1,
-          intensity: 1.0,
-        };
+        gestureState.current = { type: "tilt", startTime: now, duration: 2.1, intensity: 1.0 };
       } else if (headGesture === "shake") {
-        gestureState.current = {
-          type: "shake",
-          startTime: now,
-          duration: 1.45,
-          intensity: 1.0,
-        };
+        gestureState.current = { type: "shake", startTime: now, duration: 1.45, intensity: 1.0 };
       }
     }
   }, [gestureKey, headGesture]);
@@ -433,10 +470,8 @@ interface BonesDict {
     const weights = engine.tick(dt);
     const t = performance.now() / 1000;
 
-    // Don't animate bones until the seated pose useEffect has run at least once
     const poseReady = poseApplied.current;
 
-    // Apply morph targets for facial expressions and lip-sync
     for (const { mesh, map } of morphTargets) {
       const influences = mesh.morphTargetInfluences;
       if (!influences) continue;
@@ -447,24 +482,17 @@ interface BonesDict {
         }
       }
 
-      // Drive Oculus visemes for mouth movement if present
       const jaw = weights["jawOpen"] ?? 0;
       const visemeAa = map.get("visemeaa");
-      if (visemeAa !== undefined) {
-        influences[visemeAa] = Math.min(jaw * 0.95, 1);
-      }
+      if (visemeAa !== undefined) influences[visemeAa] = Math.min(jaw * 0.95, 1);
       const visemeO = map.get("visemeo");
-      if (visemeO !== undefined) {
-        influences[visemeO] = Math.min(jaw * 0.45, 1);
-      }
+      if (visemeO !== undefined) influences[visemeO] = Math.min(jaw * 0.45, 1);
     }
 
-    // Bone-driven jaw & mouth opening (lip-sync for mint.glb / skeletal rigs)
     const mouthBone = bones.mouth;
     if (mouthBone) {
       if (!initialMouthPos.current) initialMouthPos.current = mouthBone.position.clone();
       if (!initialMouthRot.current) initialMouthRot.current = mouthBone.rotation.clone();
-
       const initPos = initialMouthPos.current;
       const initRot = initialMouthRot.current;
       if (initPos && initRot) {
@@ -473,7 +501,6 @@ interface BonesDict {
         mouthBone.position.y = initPos.y - jaw * 0.009;
         mouthBone.rotation.z = initRot.z - jaw * 0.35;
       }
-
       const lipBone = bones.lowerLip;
       if (lipBone) {
         if (!initialLowerLipPos.current) initialLowerLipPos.current = lipBone.position.clone();
@@ -485,7 +512,6 @@ interface BonesDict {
       }
     }
 
-    // Bone-driven eyelids (blinking)
     const blink = Math.max(weights["eyeBlinkLeft"] ?? 0, weights["eyeBlinkRight"] ?? 0);
     const ueL = bones.upperEyelidL, ueR = bones.upperEyelidR;
     if (ueL && ueR) {
@@ -510,7 +536,6 @@ interface BonesDict {
       }
     }
 
-    // Bone-driven eyebrows
     const browUp = (weights["browInnerUp"] ?? 0) - (weights["browDownLeft"] ?? 0);
     const bL = bones.browL, bR = bones.browR;
     if (bL && bR) {
@@ -524,8 +549,6 @@ interface BonesDict {
       }
     }
 
-    // 1. Gesture Offsets Calculation
-    // Only animate body/head bones after seated pose has been applied
     if (!poseReady) return;
 
     let gestureHeadPitch = 0;
@@ -539,17 +562,14 @@ interface BonesDict {
       if (elapsed < g.duration) {
         const p = elapsed / g.duration;
         if (g.type === "nod") {
-          // Double nod: natural spring dip & rebound
           const wave = Math.sin(p * Math.PI * 3.4) * Math.pow(1 - p, 1.1);
           gestureHeadPitch = wave * 0.17 * g.intensity;
           gestureNeckPitch = wave * 0.07 * g.intensity;
         } else if (g.type === "tilt") {
-          // Curious head tilt
           const wave = Math.sin(p * Math.PI) * Math.pow(1 - p, 0.5);
           gestureHeadRoll = wave * 0.14 * g.intensity;
           gestureHeadYaw = wave * 0.035 * g.intensity;
         } else if (g.type === "shake") {
-          // Empathetic / thoughtful head shake
           const wave = Math.sin(p * Math.PI * 3.0) * Math.pow(1 - p, 1.1);
           gestureHeadYaw = wave * 0.13 * g.intensity;
         }
@@ -558,21 +578,14 @@ interface BonesDict {
       }
     }
 
-    // 2. Listening Micro-Nods (when user is speaking)
     if (listening && g.type === "none") {
       listeningNodTimer.current -= dt;
       if (listeningNodTimer.current <= 0) {
         listeningNodTimer.current = 4.0 + Math.random() * 3.5;
-        gestureState.current = {
-          type: "nod",
-          startTime: t,
-          duration: 0.85,
-          intensity: 0.45, // subtle acknowledgment
-        };
+        gestureState.current = { type: "nod", startTime: t, duration: 0.85, intensity: 0.45 };
       }
     }
 
-    // 3. Natural Seated Posture Weight Shifts
     postureShiftTimer.current -= dt;
     if (postureShiftTimer.current <= 0) {
       postureShiftTimer.current = 9.0 + Math.random() * 8.0;
@@ -582,16 +595,12 @@ interface BonesDict {
     currentLean.current += (targetLean.current - currentLean.current) * dt * 0.7;
     currentSlouch.current += (targetSlouch.current - currentSlouch.current) * dt * 0.7;
 
-    // 4. Natural gaze and subtle micro-saccades
     const gaze = gazeRef.current;
     const saccade = Math.sin(t * 1.8) > 0.94 ? (Math.sin(t * 12) * 0.012) : 0;
-    const targetHeadY =
-      (gaze === "away" ? 0.22 : Math.sin(t * 0.35) * 0.038 + saccade) + gestureHeadYaw;
-    const targetHeadX =
-      (gaze === "down" ? 0.14 : Math.sin(t * 0.28) * 0.022) + gestureHeadPitch;
+    const targetHeadY = (gaze === "away" ? 0.22 : Math.sin(t * 0.35) * 0.038 + saccade) + gestureHeadYaw;
+    const targetHeadX = (gaze === "down" ? 0.14 : Math.sin(t * 0.28) * 0.022) + gestureHeadPitch;
     const targetHeadZ = Math.sin(t * 0.25) * 0.01 + gestureHeadRoll;
 
-    // Subtle breathing presence
     const amp = active ? 1.35 : 1.0;
     const breath = Math.sin(t * (active ? 1.8 : 1.15)) * 0.013 * amp;
 
@@ -601,12 +610,10 @@ interface BonesDict {
       const initHead = initialHeadRot.current;
       if (initHead) {
         if (bones.isBip) {
-          // Bip001: Z is Up (Yaw), X is Sideways (Pitch), Y is Forward (Roll)
           headBone.rotation.x = initHead.x - targetHeadX * 0.6;
           headBone.rotation.z = initHead.z + targetHeadY * 0.7;
           headBone.rotation.y = initHead.y + gestureHeadRoll * 0.6;
         } else {
-          // Lerp toward target offset from initial rest rotation
           const goalY = initHead.y + targetHeadY;
           const goalX = initHead.x + targetHeadX;
           const goalZ = initHead.z + targetHeadZ;
@@ -665,8 +672,6 @@ interface BonesDict {
       }
     }
 
-    // Subtle conversational breathing & gentle arm presence
-    // CRITICAL: use absolute assignment from initial rotation, NOT += (which accumulates to infinity)
     const jawVal = weights["jawOpen"] ?? 0;
     if (bones.leftArm && bones.rightArm) {
       if (!initialLeftArmRot.current) initialLeftArmRot.current = bones.leftArm.rotation.clone();
@@ -678,7 +683,6 @@ interface BonesDict {
       const initLF = initialLeftForearmRot.current;
       const initRF = initialRightForearmRot.current;
       if (initLF && initRF) {
-        // Gentle sinusoidal sway offset from the INITIAL (seated) pose — never accumulates
         const armSway = Math.sin(t * 1.6) * 0.003 * (jawVal > 0.05 ? 1.3 : 0.7);
         bones.leftForearm.rotation.z = initLF.z + armSway;
         bones.rightForearm.rotation.z = initRF.z - armSway;
@@ -686,7 +690,6 @@ interface BonesDict {
     }
   });
 
-  // Seat placement: offsets down so head is positioned at ideal conversational camera height (~1.0m)
   const seatPos = config.seat.position;
   return (
     <primitive

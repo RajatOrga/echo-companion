@@ -41,7 +41,7 @@ export function stripSpeechText(text: string): string {
  * any trailing unclosed '[' or '*' so incomplete tags are NEVER voiced.
  */
 export function stripStreamingSpeech(text: string): string {
-  let s = text.replace(/\[[^\]]*$/, "").replace(/\*[^*]*$/, "");
+  const s = text.replace(/\[[^\]]*$/, "").replace(/\*[^*]*$/, "");
   return stripSpeechText(s);
 }
 
@@ -58,45 +58,28 @@ export function inferEmotionAndGesture(text: string): {
   let head = "still";
   let gaze = "user";
 
-  // Amusement / laughter
+  // Amusement
   if (/\b(haha|hehe|funny|joke|silly|kidding|lol|rofl|giggle|laugh)\b/.test(lower)) {
-    emotion = "amused";
-    intensity = 0.8;
-    head = "nod";
-  // Positive / happy
+    emotion = "amused"; intensity = 0.8; head = "nod";
+  // Happy / positive
   } else if (/\b(yay|awesome|great|wonderful|love|glad|happy|cool|sweet|fantastic|excellent|perfect|brilliant)\b/.test(lower)) {
-    emotion = "happy";
-    intensity = 0.75;
-    head = "nod";
-  // Skeptical / evaluating (interview context: scrutiny, judgment)
-  } else if (/\b(really|is that so|interesting|tell me more|explain|elaborate|walk me through|describe|specifically|exactly|precisely|clarify)\b/.test(lower)) {
-    emotion = "curious";
-    intensity = 0.72;
-    head = "tilt";
-    gaze = "user";
-  // Curious / questioning
+    emotion = "happy"; intensity = 0.75; head = "nod";
+  // Skeptical / evaluating (interview mode: scrutiny / judgment)
+  } else if (/\b(really|is that so|interesting|tell me more|explain|elaborate|walk me through|describe|specifically|exactly|precisely|clarify|give me an example)\b/.test(lower)) {
+    emotion = "curious"; intensity = 0.72; head = "tilt"; gaze = "user";
+  // Questioning
   } else if (/\?|(\b(wonder|curious|how come|what if|how did|why did|what made)\b)/.test(lower)) {
-    emotion = "curious";
-    intensity = 0.7;
-    head = "tilt";
+    emotion = "curious"; intensity = 0.7; head = "tilt";
   // Concerned / empathetic
   } else if (/\b(sorry|worried|oh no|are you okay|sad|hurt|miss you|rough|tough|difficult|challenge|struggle)\b/.test(lower)) {
-    emotion = "concerned";
-    intensity = 0.7;
-    head = "tilt";
-    gaze = "down";
-  // Thoughtful / analytical (interviewer thinking)
+    emotion = "concerned"; intensity = 0.7; head = "tilt"; gaze = "down";
+  // Thoughtful / analytical
   } else if (/\b(hmm|perhaps|maybe|consider|think|interesting|let me|actually|however|although|on the other hand|nevertheless)\b/.test(lower)) {
-    emotion = "thoughtful";
-    intensity = 0.65;
-    head = "tilt";
-    gaze = "away";
-  // Negation / disagreement
+    emotion = "thoughtful"; intensity = 0.65; head = "tilt"; gaze = "away";
+  // Negation
   } else if (/\b(no|never|nah|can't|don't|not really|impossible|incorrect|wrong|that's not)\b/.test(lower)) {
-    head = "shake";
-    emotion = "thoughtful";
-    intensity = 0.5;
-  // Affirmation / agreement
+    head = "shake"; emotion = "thoughtful"; intensity = 0.5;
+  // Affirmation
   } else if (/\b(yes|yeah|yep|totally|definitely|absolutely|agree|of course|correct|right|exactly|good point)\b/.test(lower)) {
     head = "nod";
   }
@@ -235,7 +218,7 @@ async function* chatGenerator(
     return;
   }
 
-  // openai + any OpenAI-compatible endpoint
+  // OpenAI + compatible endpoints
   const root = base || "https://api.openai.com/v1";
   const res = await fetch(`${root}/chat/completions`, {
     method: "POST",
@@ -390,7 +373,6 @@ export const speak = createServerFn({ method: "POST" })
         audioStream.on("data", (chunk: Buffer) => chunks.push(chunk));
         audioStream.on("end", () => resolve());
         audioStream.on("error", (err: unknown) => {
-          // Reset cache on stream error so next call reconnects cleanly
           edgeTtsCache = null;
           edgeTtsCacheVoice = null;
           reject(err);
@@ -409,7 +391,7 @@ export const speak = createServerFn({ method: "POST" })
       else if (data.emotion === "thoughtful" || data.emotion === "sad" || data.emotion === "concerned") { stability = 0.60; style = 0.20; }
       else if (data.emotion === "curious" || data.emotion === "surprised") { stability = 0.40; style = 0.48; }
 
-      // FIX: was encodeURIComponent(data.voice} — missing closing paren
+      // FIXED: was encodeURIComponent(data.voice} — brace mismatch caused runtime crash
       res = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(data.voice)}`,
         {
