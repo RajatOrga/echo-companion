@@ -25,11 +25,18 @@ export type SpeechInputOptions = {
   continuous?: boolean;
   silenceTimeoutMs?: number;
   onSpeechStart?: () => void;
+  /**
+   * Pass a ref whose `.current` is true while the AI avatar is speaking.
+   * Very short interim results detected during that window are suppressed
+   * so the avatar's own voice does not trigger a barge-in.
+   */
+  isSpeakingRef?: React.MutableRefObject<boolean>;
 };
 
 /**
- * Browser speech-to-text with continuous Conversation Mode & silence timeout (VAD).
- * Allows natural pauses without prematurely cutting off thoughts or requiring repeated mic tapping.
+ * Browser speech-to-text with continuous Conversation Mode & adaptive VAD.
+ * Allows natural pauses without prematurely cutting off thoughts.
+ * Echo guard: ignores sub-3-word interim results while avatar is speaking.
  */
 export function useSpeechInput(
   onFinal: (text: string) => void,
@@ -46,11 +53,14 @@ export function useSpeechInput(
   const onSpeechStartHandler = useRef(options?.onSpeechStart);
   onSpeechStartHandler.current = options?.onSpeechStart;
 
+  const isSpeakingRef = options?.isSpeakingRef;
+
   const continuous = options?.continuous ?? false;
   const continuousRef = useRef(continuous);
   continuousRef.current = continuous;
 
-  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 1500;
+  // Base silence timeout — adaptive logic adds to this based on trailing word
+  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 1200;
   const silenceTimeoutMsRef = useRef(silenceTimeoutMs);
   silenceTimeoutMsRef.current = silenceTimeoutMs;
 
@@ -60,56 +70,39 @@ export function useSpeechInput(
   const shouldListen = useRef(false);
   // Track whether we're in a silence gap so onSpeechStart fires only once per utterance
   const wasSilent = useRef(true);
+  // Timestamp after which barge-in is allowed (prevents echo self-interrupt)
+  const bargeInAllowedAt = useRef<number>(0);
 
-  // Computes adaptive silence timeout based on linguistic completeness cues in the spoken text
+  // Computes adaptive silence timeout based on linguistic completeness cues
   const getAdaptiveDelay = (text: string, base: number) => {
     const trimmed = text.trim().toLowerCase();
     if (!trimmed) return base;
-
     const words = trimmed.split(/\s+/);
     const trailingWord = words[words.length - 1] ?? "";
-
-    // Connectives, conjunctions, prepositions, auxiliaries, pronouns, or hesitation fillers
-    // indicating the speaker is mid-clause or searching for words
     const INCOMPLETE_TRAILERS = new Set([
-      // Conjunctions & connectives
       "and", "or", "but", "nor", "so", "because", "although", "though", "while", "whereas",
       "if", "unless", "until", "since", "like", "then", "also", "besides", "plus",
-      // Prepositions
       "in", "on", "at", "to", "for", "of", "with", "about", "between", "into", "through",
       "after", "before", "above", "below", "from", "up", "down", "off", "over", "under", "by", "as",
-      // Auxiliary verbs & copulas
       "is", "am", "are", "was", "were", "be", "been", "being",
       "have", "has", "had", "do", "does", "did",
       "will", "would", "shall", "should", "can", "could", "may", "might", "must",
-      // Determiners & relative/interrogative pronouns
       "the", "a", "an", "my", "your", "his", "her", "its", "our", "their",
       "this", "that", "these", "those", "which", "what", "who", "whom", "whose",
       "where", "when", "why", "how",
-      // Fillers & hesitations
-      "um", "uh", "er", "ah", "hmm", "well", "actually", "basically", "literally"
+      "um", "uh", "er", "ah", "hmm", "well", "actually", "basically", "literally",
     ]);
-
-    // Punctuation indicating pause mid-thought (comma, ellipsis, dash, colon)
-    const hasMidPunctuation = /[,;:\-—~]$/.test(trimmed) || trimmed.endsWith("...");
-
+    const hasMidPunctuation = /[,;:\-\u2014~]$/.test(trimmed) || trimmed.endsWith("...");
     if (INCOMPLETE_TRAILERS.has(trailingWord) || hasMidPunctuation) {
-      // User paused mid-clause or paused to think: give generous breathing room (2.2s - 2.5s)
-      return Math.max(2250, base + 750);
+      return Math.max(2200, base + 700);
     }
-
-    // Short phrase without punctuation (< 4 words): e.g. "Hey there", "I think", "Wait"
-    if (words.length < 4 && !/[.!?。！？]$/.test(trimmed)) {
-      return Math.max(1850, base + 350);
+    if (words.length < 4 && !/[.!?\u3002\uff01\uff1f]$/.test(trimmed)) {
+      return Math.max(1600, base + 350);
     }
-
-    // If ends with sentence terminal (. ! ?), thought is complete -> brisk 1150ms
-    if (/[.!?。！？]$/.test(trimmed)) {
-      return Math.max(1150, Math.min(base, 1300));
+    if (/[.!?\u3002\uff01\uff1f]$/.test(trimmed)) {
+      return Math.max(950, Math.min(base, 1100));
     }
-
-    // Default natural conversational pause threshold: at least 1500ms
-    return Math.max(1500, base);
+    return Math.max(1200, base);
   };
 
   useEffect(() => {
@@ -151,10 +144,17 @@ export function useSpeechInput(
         ).trim();
         setInterim(fullPreview);
 
-        // Reset silence timer every time user speaks
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
         if (fullPreview) {
-          // Only fire onSpeechStart once per utterance (when transitioning from silence)
+          // Echo suppression: avatar is speaking + transcript is very short + cooldown active
+          // → likely mic picked up the avatar's own voice, not the user
+          const wordCount = fullPreview.trim().split(/\s+/).length;
+          const echoLikely =
+            isSpeakingRef?.current &&
+            wordCount < 3 &&
+            Date.now() < bargeInAllowedAt.current;
+          if (echoLikely) return; // skip — this is probably avatar echo
+
           if (wasSilent.current) {
             wasSilent.current = false;
             onSpeechStartHandler.current?.();
@@ -166,7 +166,7 @@ export function useSpeechInput(
             ).trim();
             if (toSubmit) {
               accumulator.current = "";
-              wasSilent.current = true; // reset for next utterance
+              wasSilent.current = true;
               setInterim("");
               finalHandler.current(toSubmit);
             }
@@ -191,10 +191,7 @@ export function useSpeechInput(
 
     instance.onerror = (event: unknown) => {
       const err = (event as { error?: string })?.error;
-      if (err === "no-speech") {
-        // Normal pause during conversation mode
-        return;
-      }
+      if (err === "no-speech") return; // normal pause during conversation
       if (err === "not-allowed" || err === "service-not-allowed") {
         shouldListen.current = false;
         setListening(false);
@@ -204,7 +201,7 @@ export function useSpeechInput(
 
     instance.onend = () => {
       if (shouldListen.current && continuousRef.current) {
-        // Auto-rearm watchdog if recognition drops during conversation mode
+        // Auto-rearm: faster 60ms restart (was 150ms) for snappier always-on listening
         if (restartTimer.current) clearTimeout(restartTimer.current);
         restartTimer.current = setTimeout(() => {
           if (shouldListen.current) {
@@ -212,10 +209,10 @@ export function useSpeechInput(
               instance.start();
               setListening(true);
             } catch {
-              /* already started or aborted */
+              /* already started */
             }
           }
-        }, 150);
+        }, 60);
       } else {
         setListening(false);
         setInterim("");
@@ -241,7 +238,7 @@ export function useSpeechInput(
   const start = useCallback(() => {
     shouldListen.current = true;
     accumulator.current = "";
-    wasSilent.current = true; // ensure onSpeechStart fires for first utterance
+    wasSilent.current = true;
     setInterim("");
     const instance = recognition.current;
     if (!instance) return;
@@ -255,7 +252,7 @@ export function useSpeechInput(
 
   const stop = useCallback(() => {
     shouldListen.current = false;
-    wasSilent.current = true; // reset for next session
+    wasSilent.current = true;
     if (silenceTimer.current) clearTimeout(silenceTimer.current);
     if (restartTimer.current) clearTimeout(restartTimer.current);
     accumulator.current = "";
@@ -278,5 +275,14 @@ export function useSpeechInput(
     }
   }, [interim]);
 
-  return { listening, interim, supported, start, stop, flush };
+  /**
+   * Call this the moment the avatar begins playing audio.
+   * Activates the echo guard for 1.5 s to prevent the mic from
+   * picking up the avatar's own voice and triggering a false barge-in.
+   */
+  const notifySpeakingStart = useCallback(() => {
+    bargeInAllowedAt.current = Date.now() + 1500;
+  }, []);
+
+  return { listening, interim, supported, start, stop, flush, notifySpeakingStart };
 }

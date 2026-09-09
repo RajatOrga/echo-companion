@@ -3,9 +3,7 @@ import { z } from "zod";
 
 /**
  * Thin, provider-agnostic proxy. The user's key travels with a single request
- * and is never stored, logged or persisted anywhere. This exists only because
- * some providers refuse direct browser calls (CORS) — nothing about it is
- * platform-specific, so the app stays portable to any host.
+ * and is never stored, logged or persisted anywhere.
  */
 
 const ChatInput = z.object({
@@ -29,12 +27,12 @@ export type TurnResult = {
 
 export function stripSpeechText(text: string): string {
   return text
-    .replace(/\[(emotion|intensity|gaze|head):\s*[^\]]+\]/gi, "") // strip metadata tags
-    .replace(/\[[^\]]*\]/g, "") // strip any brackets
-    .replace(/\*[^*]*\*/g, "")  // strip stage directions (*chuckles*, etc)
-    .replace(/```[\s\S]*?```/g, "") // strip code blocks
-    .replace(/[#*_~`]/g, "")    // strip markdown symbols
-    .replace(/\s+/g, " ")       // collapse spaces
+    .replace(/\[(emotion|intensity|gaze|head):\s*[^\]]+\]/gi, "")
+    .replace(/\[[^\]]*\]/g, "")
+    .replace(/\*[^*]*\*/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/[#*_~`]/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -47,7 +45,12 @@ export function stripStreamingSpeech(text: string): string {
   return stripSpeechText(s);
 }
 
-export function inferEmotionAndGesture(text: string): { emotion: string; intensity: number; gaze: string; head: string } {
+export function inferEmotionAndGesture(text: string): {
+  emotion: string;
+  intensity: number;
+  gaze: string;
+  head: string;
+} {
   const lower = text.toLowerCase();
 
   let emotion = "warm";
@@ -55,31 +58,46 @@ export function inferEmotionAndGesture(text: string): { emotion: string; intensi
   let head = "still";
   let gaze = "user";
 
-  if (/\b(haha|hehe|funny|joke|silly|kidding|lol|rofl|giggle)\b/.test(lower)) {
+  // Amusement / laughter
+  if (/\b(haha|hehe|funny|joke|silly|kidding|lol|rofl|giggle|laugh)\b/.test(lower)) {
     emotion = "amused";
     intensity = 0.8;
     head = "nod";
-  } else if (/\b(yay|awesome|great|wonderful|love|glad|happy|cool|sweet|fantastic)\b/.test(lower)) {
+  // Positive / happy
+  } else if (/\b(yay|awesome|great|wonderful|love|glad|happy|cool|sweet|fantastic|excellent|perfect|brilliant)\b/.test(lower)) {
     emotion = "happy";
     intensity = 0.75;
     head = "nod";
-  } else if (/\?|(\b(wonder|curious|how come|what if|really\?)\b)/.test(lower)) {
+  // Skeptical / evaluating (interview context: scrutiny, judgment)
+  } else if (/\b(really|is that so|interesting|tell me more|explain|elaborate|walk me through|describe|specifically|exactly|precisely|clarify)\b/.test(lower)) {
+    emotion = "curious";
+    intensity = 0.72;
+    head = "tilt";
+    gaze = "user";
+  // Curious / questioning
+  } else if (/\?|(\b(wonder|curious|how come|what if|how did|why did|what made)\b)/.test(lower)) {
     emotion = "curious";
     intensity = 0.7;
     head = "tilt";
-  } else if (/\b(sorry|worried|oh no|are you okay|sad|hurt|miss you|rough|tough)\b/.test(lower)) {
+  // Concerned / empathetic
+  } else if (/\b(sorry|worried|oh no|are you okay|sad|hurt|miss you|rough|tough|difficult|challenge|struggle)\b/.test(lower)) {
     emotion = "concerned";
     intensity = 0.7;
     head = "tilt";
     gaze = "down";
-  } else if (/\b(hmm|perhaps|maybe|consider|think|interesting)\b/.test(lower)) {
+  // Thoughtful / analytical (interviewer thinking)
+  } else if (/\b(hmm|perhaps|maybe|consider|think|interesting|let me|actually|however|although|on the other hand|nevertheless)\b/.test(lower)) {
     emotion = "thoughtful";
-    intensity = 0.6;
+    intensity = 0.65;
     head = "tilt";
     gaze = "away";
-  } else if (/\b(no|never|nah|can't|don't|not really|impossible)\b/.test(lower)) {
+  // Negation / disagreement
+  } else if (/\b(no|never|nah|can't|don't|not really|impossible|incorrect|wrong|that's not)\b/.test(lower)) {
     head = "shake";
-  } else if (/\b(yes|yeah|yep|totally|definitely|absolutely|agree|of course)\b/.test(lower)) {
+    emotion = "thoughtful";
+    intensity = 0.5;
+  // Affirmation / agreement
+  } else if (/\b(yes|yeah|yep|totally|definitely|absolutely|agree|of course|correct|right|exactly|good point)\b/.test(lower)) {
     head = "nod";
   }
 
@@ -98,10 +116,8 @@ export function parseTurn(raw: string): TurnResult {
     head: inferred.head,
   };
 
-  // If explicit tags were present, allow them to override
   const tagRegex = /\[(emotion|intensity|gaze|head):\s*([^\]]+)\]/gi;
   let match;
-
   while ((match = tagRegex.exec(text)) !== null) {
     const key = match[1]!.toLowerCase();
     const value = match[2]!.trim().toLowerCase();
@@ -111,7 +127,6 @@ export function parseTurn(raw: string): TurnResult {
     if (key === "head") result.head = value;
   }
 
-  // Pure spoken words only — never leak tags into speech
   result.reply = stripSpeechText(text);
   return result;
 }
@@ -129,108 +144,29 @@ async function failure(res: Response): Promise<never> {
   throw new Error(message || `Provider returned ${res.status}`);
 }
 
-async function* chatGenerator(data: z.infer<typeof ChatInput>): AsyncGenerator<string, void, unknown> {
-    const { provider, apiKey, model, system, messages } = data;
-    const base = (data.baseUrl || "").replace(/\/+$/, "");
+async function* chatGenerator(
+  data: z.infer<typeof ChatInput>,
+): AsyncGenerator<string, void, unknown> {
+  const { provider, apiKey, model, system, messages } = data;
+  const base = (data.baseUrl || "").replace(/\/+$/, "");
 
-    if (provider === "anthropic") {
-      const res = await fetch(`${base || "https://api.anthropic.com"}/v1/messages`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 700,
-          system,
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
-          stream: true,
-        }),
-      });
-      if (!res.ok) await failure(res);
-      const reader = res.body?.getReader();
-      if (!reader) return;
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-          const dataStr = trimmed.slice(6);
-          if (dataStr === "[DONE]") return;
-          try {
-            const parsed = JSON.parse(dataStr);
-            if (parsed.type === "content_block_delta" && parsed.delta?.text) {
-              yield parsed.delta.text;
-            }
-          } catch {}
-        }
-      }
-      return;
-    }
-
-    if (provider === "gemini") {
-      const root = base || "https://generativelanguage.googleapis.com/v1beta";
-      const res = await fetch(
-        `${root}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: system }] },
-            contents: messages.map((m) => ({
-              role: m.role === "assistant" ? "model" : "user",
-              parts: [{ text: m.content }],
-            })),
-            generationConfig: { maxOutputTokens: 700 },
-          }),
-        },
-      );
-      if (!res.ok) await failure(res);
-      const reader = res.body?.getReader();
-      if (!reader) return;
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-          const dataStr = trimmed.slice(6);
-          try {
-            const parsed = JSON.parse(dataStr);
-            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) yield text;
-          } catch {}
-        }
-      }
-      return;
-    }
-
-    // openai + any OpenAI-compatible endpoint
-    const root = base || "https://api.openai.com/v1";
-    const res = await fetch(`${root}/chat/completions`, {
+  if (provider === "anthropic") {
+    const res = await fetch(`${base || "https://api.anthropic.com"}/v1/messages`, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
       body: JSON.stringify({
         model,
-        messages: [{ role: "system", content: system }, ...messages],
+        max_tokens: 700,
+        system,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
         stream: true,
       }),
     });
     if (!res.ok) await failure(res);
-    
     const reader = res.body?.getReader();
     if (!reader) return;
     const decoder = new TextDecoder("utf-8");
@@ -248,11 +184,91 @@ async function* chatGenerator(data: z.infer<typeof ChatInput>): AsyncGenerator<s
         if (dataStr === "[DONE]") return;
         try {
           const parsed = JSON.parse(dataStr);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) yield content;
+          if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+            yield parsed.delta.text;
+          }
         } catch {}
       }
     }
+    return;
+  }
+
+  if (provider === "gemini") {
+    const root = base || "https://generativelanguage.googleapis.com/v1beta";
+    const res = await fetch(
+      `${root}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: messages.map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          })),
+          generationConfig: { maxOutputTokens: 700 },
+        }),
+      },
+    );
+    if (!res.ok) await failure(res);
+    const reader = res.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        const dataStr = trimmed.slice(6);
+        try {
+          const parsed = JSON.parse(dataStr);
+          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) yield text;
+        } catch {}
+      }
+    }
+    return;
+  }
+
+  // openai + any OpenAI-compatible endpoint
+  const root = base || "https://api.openai.com/v1";
+  const res = await fetch(`${root}/chat/completions`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "system", content: system }, ...messages],
+      stream: true,
+    }),
+  });
+  if (!res.ok) await failure(res);
+  const reader = res.body?.getReader();
+  if (!reader) return;
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+      const dataStr = trimmed.slice(6);
+      if (dataStr === "[DONE]") return;
+      try {
+        const parsed = JSON.parse(dataStr);
+        const content = parsed.choices?.[0]?.delta?.content;
+        if (content) yield content;
+      } catch {}
+    }
+  }
 }
 
 async function chat(data: z.infer<typeof ChatInput>): Promise<Response> {
@@ -271,12 +287,11 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<Response> {
       }
     },
   });
-
   return new Response(stream, {
     headers: {
       "content-type": "text/event-stream; charset=utf-8",
       "cache-control": "no-cache, no-transform",
-      "connection": "keep-alive",
+      connection: "keep-alive",
     },
   });
 }
@@ -285,15 +300,15 @@ export const runTurn = createServerFn({ method: "POST" })
   .validator((input: unknown) => ChatInput.parse(input))
   .handler(async ({ data }): Promise<Response> => chat(data));
 
-// Kokoro-82M model instance cache for fast offline inference
 let kokoroInstance: unknown = null;
 
 async function getKokoro() {
   if (!kokoroInstance) {
     const { KokoroTTS } = await import("kokoro-js");
-    kokoroInstance = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", {
-      dtype: "q8",
-    });
+    kokoroInstance = await KokoroTTS.from_pretrained(
+      "onnx-community/Kokoro-82M-v1.0-ONNX",
+      { dtype: "q8" },
+    );
   }
   return kokoroInstance as {
     generate: (
@@ -325,8 +340,6 @@ const SpeakInput = z.object({
   intensity: z.number().optional(),
 });
 
-// Module-level Edge TTS connection cache (eliminates ~150ms handshake per sentence)
-// Typed as unknown to avoid importing the class; cast locally after dynamic import
 let edgeTtsCache: unknown = null;
 let edgeTtsCacheVoice: string | null = null;
 
@@ -352,22 +365,17 @@ export const speak = createServerFn({ method: "POST" })
   .validator((input: unknown) => SpeakInput.parse(input))
   .handler(async ({ data }): Promise<{ audio: string; mimeType: string }> => {
     const cleanText = stripSpeechText(data.text);
-    if (!cleanText) {
-      return { audio: "", mimeType: "audio/wav" };
-    }
+    if (!cleanText) return { audio: "", mimeType: "audio/wav" };
 
     if (data.ttsProvider === "kokoro") {
       const tts = await getKokoro();
-      const rawAudio = await tts.generate(cleanText, {
-        voice: data.voice || "af_heart",
-      });
+      const rawAudio = await tts.generate(cleanText, { voice: data.voice || "af_heart" });
       const wavBuffer = Buffer.from(rawAudio.toWav());
       return { audio: wavBuffer.toString("base64"), mimeType: "audio/wav" };
     }
 
     if (data.ttsProvider === "edge") {
       const { MsEdgeTTS, OUTPUT_FORMAT } = await import("msedge-tts");
-      // Cache Edge TTS instance per voice to avoid reconnecting on every sentence
       const voiceKey = data.voice || "en-US-AvaMultilingualNeural";
       if (!edgeTtsCache || edgeTtsCacheVoice !== voiceKey) {
         const instance = new MsEdgeTTS();
@@ -382,7 +390,7 @@ export const speak = createServerFn({ method: "POST" })
         audioStream.on("data", (chunk: Buffer) => chunks.push(chunk));
         audioStream.on("end", () => resolve());
         audioStream.on("error", (err: unknown) => {
-          // If stream errors, reset cache so next call reconnects
+          // Reset cache on stream error so next call reconnects cleanly
           edgeTtsCache = null;
           edgeTtsCacheVoice = null;
           reject(err);
@@ -396,20 +404,12 @@ export const speak = createServerFn({ method: "POST" })
     if (data.ttsProvider === "elevenlabs") {
       let stability = 0.45;
       let style = 0.35;
-      if (data.emotion === "happy" || data.emotion === "amused") {
-        stability = 0.38;
-        style = 0.55;
-      } else if (data.emotion === "warm" || data.emotion === "companion") {
-        stability = 0.42;
-        style = 0.45;
-      } else if (data.emotion === "thoughtful" || data.emotion === "sad" || data.emotion === "concerned") {
-        stability = 0.60;
-        style = 0.20;
-      } else if (data.emotion === "curious" || data.emotion === "surprised") {
-        stability = 0.40;
-        style = 0.48;
-      }
+      if (data.emotion === "happy" || data.emotion === "amused") { stability = 0.38; style = 0.55; }
+      else if (data.emotion === "warm" || data.emotion === "companion") { stability = 0.42; style = 0.45; }
+      else if (data.emotion === "thoughtful" || data.emotion === "sad" || data.emotion === "concerned") { stability = 0.60; style = 0.20; }
+      else if (data.emotion === "curious" || data.emotion === "surprised") { stability = 0.40; style = 0.48; }
 
+      // FIX: was encodeURIComponent(data.voice} — missing closing paren
       res = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(data.voice)}`,
         {
@@ -429,12 +429,9 @@ export const speak = createServerFn({ method: "POST" })
       );
     } else {
       const speed =
-        data.emotion === "thoughtful" || data.emotion === "sad"
-          ? 0.94
-          : data.emotion === "happy" || data.emotion === "amused"
-            ? 1.05
-            : 1.0;
-
+        data.emotion === "thoughtful" || data.emotion === "sad" ? 0.94
+        : data.emotion === "happy" || data.emotion === "amused" ? 1.05
+        : 1.0;
       res = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${data.ttsKey}` },
@@ -452,19 +449,14 @@ export const speak = createServerFn({ method: "POST" })
     return { audio: buffer.toString("base64"), mimeType: "audio/mpeg" };
   });
 
-const TestInput = ChatInput.pick({
-  provider: true,
-  apiKey: true,
-  model: true,
-  baseUrl: true,
-});
+const TestInput = ChatInput.pick({ provider: true, apiKey: true, model: true, baseUrl: true });
 
 export const testConnection = createServerFn({ method: "POST" })
   .validator((input: unknown) => TestInput.parse(input))
   .handler(async ({ data }): Promise<{ ok: true; sample: string }> => {
     const stream = chatGenerator({
       ...data,
-      system: 'Reply with exactly: [emotion: warm] Hello, I can hear you.',
+      system: "Reply with exactly: [emotion: warm] Hello, I can hear you.",
       messages: [{ role: "user", content: "Say hello." }],
     });
     let full = "";

@@ -30,13 +30,14 @@ export type VoiceOptions = {
     rate: number;
     pitch: number;
   };
+  /** Called the instant audio playback begins — use for echo-guard timing */
+  onPlaybackStart?: () => void;
 };
 
 /**
  * Speaks a reply and drives the mouth from the loudness of the audio.
- * Supports streaming: splits long text into sentences and synthesizes/plays
- * them in a pipeline so the first sentence plays while later ones are still
- * being synthesized. Falls back to the browser's own voice when no key.
+ * Streaming pipeline: Producer → Synthesizer (2 workers) → Player.
+ * First sentence fires after only ~12 chars for minimal latency.
  */
 export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
   const ctxRef = useRef<AudioContext | null>(null);
@@ -53,7 +54,16 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
     engine.setMouth(0);
   }, [engine]);
 
-  useEffect(() => cleanup, [cleanup]);
+  useEffect(() => {
+    return () => {
+      cleanup();
+      // Close AudioContext on unmount to prevent resource leak (browser cap: ~6 contexts)
+      if (ctxRef.current && ctxRef.current.state !== "closed") {
+        ctxRef.current.close().catch(() => {});
+        ctxRef.current = null;
+      }
+    };
+  }, [cleanup]);
 
   const browserVoice = useCallback(
     (text: string, options?: { rate?: number; pitch?: number }) =>
@@ -68,7 +78,6 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         utterance.pitch = options?.pitch ?? 1.0;
 
         const voices = window.speechSynthesis.getVoices();
-        // Prioritize Microsoft Online Natural / Neural studio voices on Windows/Edge/Chrome
         const naturalVoice =
           voices.find(
             (v) =>
@@ -94,14 +103,11 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
           rafRef.current = requestAnimationFrame(tick);
         };
 
-        // Realistic mouth impulse on every word boundary
         utterance.onboundary = (event) => {
           if (event.name === "word") {
             engine.setMouth(0.65 + Math.random() * 0.3);
             if (mouthDecayTimer) clearTimeout(mouthDecayTimer);
-            mouthDecayTimer = setTimeout(() => {
-              engine.setMouth(0.15);
-            }, 110);
+            mouthDecayTimer = setTimeout(() => engine.setMouth(0.15), 110);
           }
         };
 
@@ -121,11 +127,12 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
     [engine],
   );
 
-  /** Decode base64 audio into an AudioBuffer ready for playback */
   const decodeChunk = useCallback(
     async (audio: string): Promise<AudioBuffer> => {
-      const ctx = ctxRef.current ?? new AudioContext();
-      ctxRef.current = ctx;
+      if (!ctxRef.current || ctxRef.current.state === "closed") {
+        ctxRef.current = new AudioContext();
+      }
+      const ctx = ctxRef.current;
       if (ctx.state === "suspended") await ctx.resume().catch(() => {});
       const bytes = base64ToBytes(audio);
       return ctx.decodeAudioData(bytes.buffer as ArrayBuffer);
@@ -133,9 +140,8 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
     [],
   );
 
-  /** Play a single AudioBuffer with mouth-sync analyser, returns when playback ends */
   const playBuffer = useCallback(
-    (buffer: AudioBuffer): Promise<void> => {
+    (buffer: AudioBuffer, onStart?: () => void): Promise<void> => {
       return new Promise<void>((resolve) => {
         const ctx = ctxRef.current!;
         const source = ctx.createBufferSource();
@@ -155,36 +161,28 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
             sum += v * v;
           }
           const rms = Math.sqrt(sum / data.length);
-          engine.setMouth(Math.min(rms * 4.2, 1));
+          // 5.5x gain (was 4.2) for more visible lip movement
+          engine.setMouth(Math.min(rms * 5.5, 1));
           rafRef.current = requestAnimationFrame(tick);
         };
 
         stopRef.current = () => {
-          try {
-            source.stop();
-          } catch {
-            /* already ended */
-          }
+          try { source.stop(); } catch { /* already ended */ }
         };
         source.onended = () => {
           if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
           rafRef.current = null;
-          // Settle mouth when no immediate next buffer is queued
           engine.setMouth(0);
           resolve();
         };
         source.start();
+        onStart?.(); // notify caller that audio actually started
         rafRef.current = requestAnimationFrame(tick);
       });
     },
     [engine],
   );
 
-  /**
-   * Streaming speak: splits text into sentences, synthesizes them in a pipeline
-   * (with concurrent lookahead prefetching), and plays them back-to-back with
-   * zero silence gaps between sentences.
-   */
   const speak = useCallback(
     async (textOrStream: string | AsyncIterable<string>, settings: KeySettings, options?: VoiceOptions) => {
       cleanup();
@@ -200,10 +198,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
       const sentenceWaiters: Array<() => void> = [];
 
       const notifySentenceWaiters = () => {
-        while (sentenceWaiters.length > 0) {
-          const resolve = sentenceWaiters.shift()!;
-          resolve();
-        }
+        while (sentenceWaiters.length > 0) sentenceWaiters.shift()!();
       };
 
       const pushSentence = (sentence: string) => {
@@ -222,8 +217,10 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         return null;
       };
 
-      // Producer: accumulates incoming stream chunks and emits speakable units
-      // Never emits tiny fragments (< 28 chars) alone to prevent TTS buffer starvation
+      /**
+       * Producer: accumulates stream chunks and emits speakable sentence units.
+       * First sentence threshold: 12 chars (down from 28) for near-instant first audio.
+       */
       const producer = async () => {
         let buffer = "";
         let isFirst = true;
@@ -231,11 +228,12 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
           for await (const chunk of stream) {
             if (cancelledRef.current) break;
             buffer += chunk;
-            const minChars = isFirst ? 28 : 38;
+            // 12 chars for first sentence (fast start), 30 thereafter (quality)
+            const minChars = isFirst ? 12 : 30;
 
             const segments = splitIntoSentences(buffer, {
               minFirstChars: minChars,
-              minChars: 38,
+              minChars: 30,
               maxClauseChars: 85,
             });
 
@@ -248,7 +246,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
               buffer = lastSegment;
             } else if (segments.length === 1) {
               const single = segments[0]!;
-              const hasTerminal = /[.!?。！？]["')\]]*$/.test(single) || single.includes("\n");
+              const hasTerminal = /[.!?\u3002\uff01\uff1f]["')\]]*$/.test(single) || single.includes("\n");
               if (hasTerminal && single.length >= minChars) {
                 pushSentence(single);
                 isFirst = false;
@@ -276,23 +274,17 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
       const audioWaiters: Array<() => void> = [];
       const backpressureWaiters: Array<() => void> = [];
       let isSynthComplete = false;
+      let firstPlaybackFired = false;
 
       const notifyAudioWaiters = () => {
-        while (audioWaiters.length > 0) {
-          const resolve = audioWaiters.shift()!;
-          resolve();
-        }
+        while (audioWaiters.length > 0) audioWaiters.shift()!();
       };
-
       const notifyBackpressureWaiters = () => {
-        while (backpressureWaiters.length > 0) {
-          const resolve = backpressureWaiters.shift()!;
-          resolve();
-        }
+        while (backpressureWaiters.length > 0) backpressureWaiters.shift()!();
       };
 
-      const pushAudio = (buffer: AudioBuffer) => {
-        audioQueue.push(buffer);
+      const pushAudio = (buf: AudioBuffer) => {
+        audioQueue.push(buf);
         notifyAudioWaiters();
       };
 
@@ -312,7 +304,6 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         return null;
       };
 
-      // Ordered delivery map to ensure AudioBuffers are delivered in exact sentence sequence
       const readyAudio = new Map<number, AudioBuffer | null>();
       let nextDeliverIndex = 0;
       let nextSentenceIndex = 0;
@@ -322,19 +313,25 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
           const buf = readyAudio.get(nextDeliverIndex);
           readyAudio.delete(nextDeliverIndex);
           nextDeliverIndex++;
-          if (buf) {
-            pushAudio(buf);
-          }
+          if (buf) pushAudio(buf);
         }
       };
 
-      const defaultVoice = settings.ttsProvider === "kokoro" ? "af_heart"
-          : settings.ttsProvider === "edge" ? "en-US-AvaMultilingualNeural"
-          : settings.ttsProvider === "elevenlabs" ? "21m00Tcm4TlvDq8ikWAM" : "alloy";
+      const defaultVoice =
+        settings.ttsProvider === "kokoro" ? "af_heart"
+        : settings.ttsProvider === "edge" ? "en-US-AvaMultilingualNeural"
+        : settings.ttsProvider === "elevenlabs" ? "21m00Tcm4TlvDq8ikWAM"
+        : "alloy";
       const voice = options?.voice || (settings.voice !== "auto" ? settings.voice : defaultVoice);
 
       const synthesizeOne = async (index: number, sentence: string) => {
-        if (settings.ttsProvider === "none" || (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim())) {
+        const useBrowser =
+          settings.ttsProvider === "none" ||
+          (settings.ttsProvider !== "edge" &&
+            settings.ttsProvider !== "kokoro" &&
+            !settings.ttsKey.trim());
+
+        if (useBrowser) {
           let rate = options?.browser?.rate ?? 0.98;
           let pitch = options?.browser?.pitch ?? 1.0;
           if (options?.emotion === "happy" || options?.emotion === "amused") { rate *= 1.05; pitch *= 1.08; }
@@ -348,7 +345,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         try {
           const { audio } = await speakFn({
             data: {
-              ttsProvider: settings.ttsProvider as any,
+              ttsProvider: settings.ttsProvider as "edge" | "kokoro" | "openai" | "elevenlabs",
               ttsKey: settings.ttsKey,
               voice,
               text: sentence,
@@ -373,15 +370,12 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
 
       const worker = async () => {
         while (!cancelledRef.current) {
-          // Backpressure: cap pre-synthesized audio queue to 3
           while (audioQueue.length >= 3 && !cancelledRef.current) {
             await new Promise<void>((resolve) => { backpressureWaiters.push(resolve); });
           }
           if (cancelledRef.current) break;
-
           const sentence = await waitForNextSentence();
           if (!sentence) break;
-
           const idx = nextSentenceIndex++;
           await synthesizeOne(idx, sentence);
         }
@@ -389,12 +383,12 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
 
       const isBrowserTts =
         settings.ttsProvider === "none" ||
-        (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim());
+        (settings.ttsProvider !== "edge" &&
+          settings.ttsProvider !== "kokoro" &&
+          !settings.ttsKey.trim());
 
       const synthesizer = async () => {
         try {
-          // For browser TTS, run single worker to avoid voice overlapping
-          // For remote/edge TTS, run 2 concurrent workers for lookahead prefetching
           if (isBrowserTts) {
             await worker();
           } else {
@@ -411,26 +405,23 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         while (!cancelledRef.current) {
           const buffer = await waitForNextAudio();
           if (!buffer) break;
-          await playBuffer(buffer);
+          await playBuffer(buffer, firstPlaybackFired ? undefined : () => {
+            firstPlaybackFired = true;
+            options?.onPlaybackStart?.();
+          });
         }
       };
 
       if (isBrowserTts) {
-        // In browser speech synthesis, browserVoice handles playback sequentially inside synthesizeOne
         await Promise.all([producer(), synthesizer()]);
       } else {
-        // In audio buffer mode (Edge, Kokoro, ElevenLabs):
-        // Launch producer and synthesizer concurrently, and stream audio to player
         const synthTask = Promise.all([producer(), synthesizer()])
-          .catch((err) => {
-            console.error("Speech pipeline error:", err);
-          })
+          .catch((err) => console.error("Speech pipeline error:", err))
           .finally(() => {
             isSynthComplete = true;
             notifyAudioWaiters();
             notifyBackpressureWaiters();
           });
-
         await player();
         await synthTask;
       }
