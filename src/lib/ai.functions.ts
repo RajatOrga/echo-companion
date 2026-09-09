@@ -129,7 +129,7 @@ async function failure(res: Response): Promise<never> {
   throw new Error(message || `Provider returned ${res.status}`);
 }
 
-async function chat(data: z.infer<typeof ChatInput>): Promise<AsyncGenerator<string, void, unknown>> {
+async function* chatGenerator(data: z.infer<typeof ChatInput>): AsyncGenerator<string, void, unknown> {
     const { provider, apiKey, model, system, messages } = data;
     const base = (data.baseUrl || "").replace(/\/+$/, "");
 
@@ -150,31 +150,30 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<AsyncGenerator<str
         }),
       });
       if (!res.ok) await failure(res);
-      return (async function* () {
-        const reader = res.body?.getReader();
-        if (!reader) return;
-        const decoder = new TextDecoder("utf-8");
-        let buffer = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith("data: ")) continue;
-            const data = trimmed.slice(6);
-            if (data === "[DONE]") return;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.type === "content_block_delta" && parsed.delta?.text) {
-                yield parsed.delta.text;
-              }
-            } catch {}
-          }
+      const reader = res.body?.getReader();
+      if (!reader) return;
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const dataStr = trimmed.slice(6);
+          if (dataStr === "[DONE]") return;
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+              yield parsed.delta.text;
+            }
+          } catch {}
         }
-      })();
+      }
+      return;
     }
 
     if (provider === "gemini") {
@@ -195,29 +194,28 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<AsyncGenerator<str
         },
       );
       if (!res.ok) await failure(res);
-      return (async function* () {
-        const reader = res.body?.getReader();
-        if (!reader) return;
-        const decoder = new TextDecoder("utf-8");
-        let buffer = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith("data: ")) continue;
-            const data = trimmed.slice(6);
-            try {
-              const parsed = JSON.parse(data);
-              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) yield text;
-            } catch {}
-          }
+      const reader = res.body?.getReader();
+      if (!reader) return;
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const dataStr = trimmed.slice(6);
+          try {
+            const parsed = JSON.parse(dataStr);
+            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) yield text;
+          } catch {}
         }
-      })();
+      }
+      return;
     }
 
     // openai + any OpenAI-compatible endpoint
@@ -233,35 +231,59 @@ async function chat(data: z.infer<typeof ChatInput>): Promise<AsyncGenerator<str
     });
     if (!res.ok) await failure(res);
     
-    return (async function* () {
-      const reader = res.body?.getReader();
-      if (!reader) return;
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-          const data = trimmed.slice(6);
-          if (data === "[DONE]") return;
-          try {
-            const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) yield content;
-          } catch {}
-        }
+    const reader = res.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        const dataStr = trimmed.slice(6);
+        if (dataStr === "[DONE]") return;
+        try {
+          const parsed = JSON.parse(dataStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) yield content;
+        } catch {}
       }
-    })();
+    }
+}
+
+async function chat(data: z.infer<typeof ChatInput>): Promise<Response> {
+  const gen = chatGenerator(data);
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of gen) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-cache, no-transform",
+      "connection": "keep-alive",
+    },
+  });
 }
 
 export const runTurn = createServerFn({ method: "POST" })
   .validator((input: unknown) => ChatInput.parse(input))
-  .handler(({ data }) => chat(data));
+  .handler(async ({ data }): Promise<Response> => chat(data));
 
 // Kokoro-82M model instance cache for fast offline inference
 let kokoroInstance: unknown = null;
@@ -423,7 +445,7 @@ const TestInput = ChatInput.pick({
 export const testConnection = createServerFn({ method: "POST" })
   .validator((input: unknown) => TestInput.parse(input))
   .handler(async ({ data }): Promise<{ ok: true; sample: string }> => {
-    const stream = await chat({
+    const stream = chatGenerator({
       ...data,
       system: 'Reply with exactly: [emotion: warm] Hello, I can hear you.',
       messages: [{ role: "user", content: "Say hello." }],

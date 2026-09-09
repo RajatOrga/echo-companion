@@ -155,7 +155,7 @@ function TalkPage() {
       void persist("user", message);
 
       try {
-        const streamIterable = await ask({
+        const res = await ask({
           data: {
             provider: settings.provider,
             apiKey: settings.apiKey,
@@ -166,7 +166,16 @@ function TalkPage() {
           },
         });
 
-        // Switch from "thinking" to "speaking" in one React batch to avoid flicker
+        const responseObj = res as unknown as Response;
+        if (responseObj.ok === false) {
+          const errText = await responseObj.text().catch(() => "");
+          throw new Error(errText || `Server returned ${responseObj.status}`);
+        }
+
+        const reader = responseObj.body?.getReader();
+        if (!reader) throw new Error("No response body received from stream");
+
+        // Switch from "thinking" to "speaking" immediately
         setBusy(false);
         setSpeaking(true);
 
@@ -177,6 +186,28 @@ function TalkPage() {
         // Use a ref-like object so cleanStream closure always reads the latest parsed values
         let parsed = { reply: "", emotion: "neutral", intensity: 0.5, gaze: "user", head: "still" };
         let previousReplyLength = 0;
+
+        const streamIterable = (async function* () {
+          const decoder = new TextDecoder("utf-8");
+          let buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith("data: ")) continue;
+              const payload = trimmed.slice(6);
+              if (payload === "[DONE]") return;
+              try {
+                const parsedPayload = JSON.parse(payload);
+                if (parsedPayload.text) yield parsedPayload.text;
+              } catch {}
+            }
+          }
+        })();
 
         const cleanStream = async function* () {
           for await (const chunk of streamIterable) {
