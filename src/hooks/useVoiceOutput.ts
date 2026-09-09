@@ -152,6 +152,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         source.onended = () => {
           if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
           rafRef.current = null;
+          // Settle mouth when no immediate next buffer is queued
           engine.setMouth(0);
           resolve();
         };
@@ -164,8 +165,8 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
 
   /**
    * Streaming speak: splits text into sentences, synthesizes them in a pipeline
-   * (up to 2 ahead), and plays them back-to-back for near-instant first-sentence
-   * playback while later sentences are still being synthesized.
+   * (with concurrent lookahead prefetching), and plays them back-to-back with
+   * zero silence gaps between sentences.
    */
   const speak = useCallback(
     async (textOrStream: string | AsyncIterable<string>, settings: KeySettings, options?: VoiceOptions) => {
@@ -200,31 +201,51 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
         return null;
       };
 
+      // Producer: accumulates incoming stream chunks and emits speakable units
+      // Never emits tiny fragments (< 28 chars) alone to prevent TTS buffer starvation
       const producer = async () => {
         let buffer = "";
+        let isFirst = true;
         try {
           for await (const chunk of stream) {
             if (cancelledRef.current) break;
             buffer += chunk;
-            const segments = splitIntoSentences(buffer);
-            if (segments.length > 0) {
+            const minChars = isFirst ? 28 : 38;
+
+            const segments = splitIntoSentences(buffer, {
+              minFirstChars: minChars,
+              minChars: 38,
+              maxClauseChars: 85,
+            });
+
+            if (segments.length > 1) {
               const lastSegment = segments.pop()!;
-              const isComplete = /[.!?。！？]\s*$/.test(lastSegment) || chunk.includes("\n");
-              
-              for (const s of segments) pushSentence(s);
-              
-              if (isComplete) {
-                pushSentence(lastSegment);
+              for (const s of segments) {
+                pushSentence(s);
+                isFirst = false;
+              }
+              buffer = lastSegment;
+            } else if (segments.length === 1) {
+              const single = segments[0]!;
+              const hasTerminal = /[.!?。！？]["')\]]*$/.test(single) || single.includes("\n");
+              if (hasTerminal && single.length >= minChars) {
+                pushSentence(single);
+                isFirst = false;
                 buffer = "";
-              } else {
-                buffer = lastSegment;
               }
             }
           }
         } catch (e) {
           console.error("Stream reading error:", e);
         } finally {
-          if (buffer.trim()) pushSentence(buffer);
+          if (buffer.trim()) {
+            const remaining = splitIntoSentences(buffer);
+            if (remaining.length > 0) {
+              for (const s of remaining) pushSentence(s);
+            } else {
+              pushSentence(buffer.trim());
+            }
+          }
           isStreamComplete = true;
           if (sentenceResolver) sentenceResolver();
         }
@@ -243,23 +264,90 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
       };
 
       const waitForNextAudio = async () => {
-        if (audioQueue.length > 0) return audioQueue.shift()!;
+        if (audioQueue.length > 0) {
+          const buf = audioQueue.shift()!;
+          if (audioResolver) {
+            audioResolver();
+            audioResolver = null;
+          }
+          return buf;
+        }
         if (isSynthComplete) return null;
         await new Promise<void>((resolve) => { audioResolver = resolve; });
-        if (audioQueue.length > 0) return audioQueue.shift()!;
+        if (audioQueue.length > 0) {
+          const buf = audioQueue.shift()!;
+          if (audioResolver) {
+            audioResolver();
+            audioResolver = null;
+          }
+          return buf;
+        }
         return null;
       };
 
-      const synthesizer = async () => {
-        const defaultVoice = settings.ttsProvider === "kokoro" ? "af_heart"
-            : settings.ttsProvider === "edge" ? "en-US-AvaMultilingualNeural"
-            : settings.ttsProvider === "elevenlabs" ? "21m00Tcm4TlvDq8ikWAM" : "alloy";
-        const voice = options?.voice || (settings.voice !== "auto" ? settings.voice : defaultVoice);
-        const MAX_AUDIO_QUEUE = 3; // cap pre-synthesized buffers to limit RAM on long responses
-        
+      // Ordered delivery map to ensure AudioBuffers are delivered in exact sentence sequence
+      const readyAudio = new Map<number, AudioBuffer | null>();
+      let nextDeliverIndex = 0;
+      let nextSentenceIndex = 0;
+
+      const deliverReadyAudio = () => {
+        while (readyAudio.has(nextDeliverIndex)) {
+          const buf = readyAudio.get(nextDeliverIndex);
+          readyAudio.delete(nextDeliverIndex);
+          nextDeliverIndex++;
+          if (buf) {
+            pushAudio(buf);
+          }
+        }
+      };
+
+      const defaultVoice = settings.ttsProvider === "kokoro" ? "af_heart"
+          : settings.ttsProvider === "edge" ? "en-US-AvaMultilingualNeural"
+          : settings.ttsProvider === "elevenlabs" ? "21m00Tcm4TlvDq8ikWAM" : "alloy";
+      const voice = options?.voice || (settings.voice !== "auto" ? settings.voice : defaultVoice);
+
+      const synthesizeOne = async (index: number, sentence: string) => {
+        if (settings.ttsProvider === "none" || (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim())) {
+          let rate = options?.browser?.rate ?? 0.98;
+          let pitch = options?.browser?.pitch ?? 1.0;
+          if (options?.emotion === "happy" || options?.emotion === "amused") { rate *= 1.05; pitch *= 1.08; }
+          else if (options?.emotion === "thoughtful" || options?.emotion === "sad") { rate *= 0.92; pitch *= 0.95; }
+          await browserVoice(sentence, { rate, pitch });
+          readyAudio.set(index, null);
+          deliverReadyAudio();
+          return;
+        }
+
+        try {
+          const { audio } = await speakFn({
+            data: {
+              ttsProvider: settings.ttsProvider as any,
+              ttsKey: settings.ttsKey,
+              voice,
+              text: sentence,
+              emotion: options?.emotion,
+              intensity: options?.intensity,
+            },
+          });
+          if (cancelledRef.current) return;
+          if (audio) {
+            const buffer = await decodeChunk(audio);
+            if (cancelledRef.current) return;
+            readyAudio.set(index, buffer);
+          } else {
+            readyAudio.set(index, null);
+          }
+        } catch (e) {
+          console.error("Synthesis error:", e);
+          readyAudio.set(index, null);
+        }
+        deliverReadyAudio();
+      };
+
+      const worker = async () => {
         while (!cancelledRef.current) {
-          // Backpressure: wait if we already have enough pre-synthesized audio
-          while (audioQueue.length >= MAX_AUDIO_QUEUE && !cancelledRef.current) {
+          // Backpressure: cap pre-synthesized audio queue to 3
+          while (audioQueue.length >= 3 && !cancelledRef.current) {
             await new Promise<void>((resolve) => { audioResolver = resolve; });
           }
           if (cancelledRef.current) break;
@@ -267,35 +355,19 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
           const sentence = await waitForNextSentence();
           if (!sentence) break;
 
-          if (settings.ttsProvider === "none" || (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim())) {
-             let rate = options?.browser?.rate ?? 0.98;
-             let pitch = options?.browser?.pitch ?? 1.0;
-             if (options?.emotion === "happy" || options?.emotion === "amused") { rate *= 1.05; pitch *= 1.08; }
-             else if (options?.emotion === "thoughtful" || options?.emotion === "sad") { rate *= 0.92; pitch *= 0.95; }
-             await browserVoice(sentence, { rate, pitch });
-             continue;
-          }
+          const idx = nextSentenceIndex++;
+          await synthesizeOne(idx, sentence);
+        }
+      };
 
-          try {
-             const { audio } = await speakFn({
-               data: {
-                 ttsProvider: settings.ttsProvider as any,
-                 ttsKey: settings.ttsKey,
-                 voice,
-                 text: sentence,
-                 emotion: options?.emotion,
-                 intensity: options?.intensity,
-               },
-             });
-             if (cancelledRef.current) break;
-             if (audio) {
-               const buffer = await decodeChunk(audio);
-               if (cancelledRef.current) break;
-               pushAudio(buffer);
-             }
-          } catch (e) {
-             console.error("Synthesis error:", e);
-          }
+      const synthesizer = async () => {
+        const isBrowserTts = settings.ttsProvider === "none" || (settings.ttsProvider !== "edge" && settings.ttsProvider !== "kokoro" && !settings.ttsKey.trim());
+        // For browser TTS, run single worker to avoid voice overlapping
+        // For remote/edge TTS, run 2 concurrent workers for lookahead prefetching
+        if (isBrowserTts) {
+          await worker();
+        } else {
+          await Promise.all([worker(), worker()]);
         }
         isSynthComplete = true;
         if (audioResolver) audioResolver();
@@ -313,7 +385,7 @@ export function useVoiceOutput(engine: EmotionEngine, speakFn: SpeakFn) {
       void synthesizer();
       await player();
     },
-    [cleanup, browserVoice, speakFn, playBuffer],
+    [cleanup, browserVoice, speakFn, playBuffer, decodeChunk],
   );
 
   return { speak, stopSpeaking: cleanup };

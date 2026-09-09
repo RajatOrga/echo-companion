@@ -1,16 +1,23 @@
 /**
  * Splits text into speakable sentence chunks for streaming TTS.
- * Uses Intl.Segmenter with smart abbreviation and decimal handling
- * so speech sounds natural and uninterrupted.
+ * Uses Intl.Segmenter with smart abbreviation, decimal, and minimum-length
+ * handling so speech sounds natural and uninterrupted.
  *
- * Also breaks on commas when a buffer exceeds 120 chars so verbose
- * AI responses don't make the user wait for a full paragraph before
- * any audio plays.
+ * Enforces a minimum chunk threshold (default 28 chars for first chunk, 38 chars for subsequent)
+ * so tiny isolated fragments (like "Hey!", "Sure,", "Hi.") are NEVER emitted alone.
+ * Isolated fragments have shorter playback than TTS synthesis latency, which causes
+ * buffer underruns and awkward 3-5 second dead silence pauses.
  */
-export function splitIntoSentences(text: string): string[] {
+export function splitIntoSentences(
+  text: string,
+  options?: { minFirstChars?: number; minChars?: number; maxClauseChars?: number },
+): string[] {
   if (!text || !text.trim()) return [];
 
   const trimmed = text.trim();
+  const minFirst = options?.minFirstChars ?? 28;
+  const minLater = options?.minChars ?? 38;
+  const maxClause = options?.maxClauseChars ?? 85;
 
   // Try standard Intl.Segmenter if available
   let raw: string[] = [];
@@ -27,7 +34,7 @@ export function splitIntoSentences(text: string): string[] {
 
   // Regex fallback if Intl.Segmenter is absent or failed
   if (raw.length === 0) {
-    const matches = trimmed.match(/[^.!?]+(?:[.!?]+["')\]]*|$)/g);
+    const matches = trimmed.match(/[^.!?。！？\n]+(?:[.!?。！？\n]+["')\]]*|$)/g);
     raw = matches ? matches.map((s) => s.trim()).filter(Boolean) : [trimmed];
   }
 
@@ -38,45 +45,53 @@ export function splitIntoSentences(text: string): string[] {
   for (const s of raw) {
     current = current ? current + " " + s : s;
     const lastWord = current.split(/\s+/).pop()?.toLowerCase() || "";
-    // Only break if it's not ending on an abbreviation, has some length, and has end punctuation
-    if (!ABBREVS.test(lastWord) && current.length >= 10 && /[.!?]["')\]]*$/.test(current)) {
-      result.push(current);
+    const minThreshold = result.length === 0 ? minFirst : minLater;
+
+    // Check if ends with real sentence terminal
+    const hasTerminal = /[.!?。！？]["')\]]*$/.test(current) || current.includes("\n");
+
+    // Only break if it's not ending on an abbreviation, has end punctuation, and meets min length
+    if (!ABBREVS.test(lastWord) && hasTerminal && current.length >= minThreshold) {
+      result.push(current.trim());
       current = "";
     }
   }
 
   if (current.trim()) {
     if (result.length > 0) {
-      result[result.length - 1] += " " + current.trim();
+      // If the leftover is very short (< 15 chars), append to previous sentence
+      if (current.trim().length < 15) {
+        result[result.length - 1] += " " + current.trim();
+      } else {
+        result.push(current.trim());
+      }
     } else {
       result.push(current.trim());
     }
   }
 
-  // Secondary pass: break very long chunks on comma boundaries
-  // This ensures the first sentence plays quickly even in verbose responses
-  const MAX_CHUNK = 120;
+  // Secondary pass: if any sentence is exceedingly long (> maxClause), break on commas or conjunctions
   const finalResult: string[] = [];
   for (const chunk of result) {
-    if (chunk.length <= MAX_CHUNK) {
+    if (chunk.length <= maxClause) {
       finalResult.push(chunk);
       continue;
     }
-    // Split on ", " boundaries
-    const parts = chunk.split(/,\s+/);
+    // Break on comma, semicolon, or dash
+    const parts = chunk.split(/(?<=[,;—:\-])\s+/);
     let acc = "";
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i]!;
-      const candidate = acc ? acc + ", " + part : part;
-      if (candidate.length > MAX_CHUNK && acc.length > 0) {
-        finalResult.push(acc + (i < parts.length - 1 ? "," : ""));
+    for (const part of parts) {
+      const candidate = acc ? acc + " " + part : part;
+      if (candidate.length >= maxClause && acc.length >= minLater) {
+        finalResult.push(acc.trim());
         acc = part;
       } else {
         acc = candidate;
       }
     }
-    if (acc) finalResult.push(acc);
+    if (acc.trim()) finalResult.push(acc.trim());
   }
 
   return finalResult.filter((s) => s.length > 0);
 }
+

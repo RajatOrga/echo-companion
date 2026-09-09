@@ -50,7 +50,7 @@ export function useSpeechInput(
   const continuousRef = useRef(continuous);
   continuousRef.current = continuous;
 
-  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 650;
+  const silenceTimeoutMs = options?.silenceTimeoutMs ?? 1200;
   const silenceTimeoutMsRef = useRef(silenceTimeoutMs);
   silenceTimeoutMsRef.current = silenceTimeoutMs;
 
@@ -60,6 +60,31 @@ export function useSpeechInput(
   const shouldListen = useRef(false);
   // Track whether we're in a silence gap so onSpeechStart fires only once per utterance
   const wasSilent = useRef(true);
+
+  // Computes adaptive silence timeout based on linguistic cues in the spoken text
+  const getAdaptiveDelay = (text: string, base: number) => {
+    const trimmed = text.trim().toLowerCase();
+    if (!trimmed) return base;
+
+    // If ends with sentence terminal (. ! ?), thought is complete -> brisk 950ms
+    if (/[.!?。！？]$/.test(trimmed)) {
+      return Math.max(950, Math.min(base, 1050));
+    }
+
+    // Trailing hesitation or connective words indicate user paused mid-thought
+    const trailingWord = trimmed.split(/\s+/).pop() ?? "";
+    const CONTINUING_WORDS = new Set([
+      "and", "or", "like", "so", "because", "but", "if", "when",
+      "that", "then", "with", "for", "as", "to", "um", "uh", "er", "ah", "well"
+    ]);
+
+    if (CONTINUING_WORDS.has(trailingWord) || /[,;:\-—]$/.test(trimmed)) {
+      return Math.max(1500, base + 350);
+    }
+
+    // Default conversational pause threshold: at least 1200ms
+    return Math.max(1200, base);
+  };
 
   useEffect(() => {
     const Ctor = getRecognitionCtor();
@@ -108,6 +133,7 @@ export function useSpeechInput(
             wasSilent.current = false;
             onSpeechStartHandler.current?.();
           }
+          const dynamicDelay = getAdaptiveDelay(fullPreview, silenceTimeoutMsRef.current);
           silenceTimer.current = setTimeout(() => {
             const toSubmit = (
               accumulator.current + (live ? ` ${live}` : "")
@@ -118,7 +144,7 @@ export function useSpeechInput(
               setInterim("");
               finalHandler.current(toSubmit);
             }
-          }, silenceTimeoutMsRef.current);
+          }, dynamicDelay);
         }
       } else {
         // Single-phrase mode

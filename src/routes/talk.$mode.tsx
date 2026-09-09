@@ -246,7 +246,6 @@ function TalkPage() {
 
   const speech = useSpeechInput((text) => void send(text), {
     continuous: handsFree,
-    silenceTimeoutMs: 600,
     onSpeechStart: () => {
       // Instant Barge-in / Interruption: silence avatar when user speaks
       stopSpeaking();
