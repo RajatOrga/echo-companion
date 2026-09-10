@@ -1,1 +1,621 @@
-aW1wb3J0IHsgY3JlYXRlRmlsZVJvdXRlLCBMaW5rLCB1c2VOYXZpZ2F0ZSB9IGZyb20gIkB0YW5zdGFjay9yZWFjdC1yb3V0ZXIiOwppbXBvcnQgeyB1c2VRdWVyeSB9IGZyb20gIkB0YW5zdGFjay9yZWFjdC1xdWVyeSI7CmltcG9ydCB7IHVzZVN0YXRlLCB1c2VNZW1vIH0gZnJvbSAicmVhY3QiOwppbXBvcnQgeyBTZXR0aW5ncywgU2h1ZmZsZSwgVHJhc2gyIH0gZnJvbSAibHVjaWRlLXJlYWN0IjsKaW1wb3J0IHsgc3VwYWJhc2UgfSBmcm9tICJAL2ludGVncmF0aW9ucy9zdXBhYmFzZS9jbGllbnQiOwppbXBvcnQgeyB1c2VBdXRoIH0gZnJvbSAiQC9ob29rcy91c2VBdXRoIjsKaW1wb3J0IHsgTU9ERVMsIGdldE1vZGUsIHR5cGUgTW9kZVNsdWcgfSBmcm9tICJAL2xpYi9tb2RlcyI7CmltcG9ydCB7IGxvYWRTZXR0aW5ncyB9IGZyb20gIkAvbGliL2tleXMiOwoKZXhwb3J0IGNvbnN0IFJvdXRlID0gY3JlYXRlRmlsZVJvdXRlKCIvZGFzaGJvYXJkIikoewogIGhlYWQ6ICgpID0+ICh7CiAgICBtZXRhOiBbCiAgICAgIHsgdGl0bGU6ICJBcmlhIOKAlCBEYXNoYm9hcmQiIH0sCiAgICAgIHsgbmFtZTogImRlc2NyaXB0aW9uIiwgY29udGVudDogIllvdXIgcHJhY3RpY2UgaHViLiIgfSwKICAgIF0sCiAgfSksCiAgY29tcG9uZW50OiBEYXNoYm9hcmQsCn0pOwoKY29uc3QgVEFCUyA9IFsiSG9tZSIsICJQcmFjdGljZSIsICJTZXNzaW9uIiwgIkZlZWRiYWNrIl0gYXMgY29uc3Q7CnR5cGUgVGFiID0gKHR5cGVvZiBUQUJTKVtudW1iZXJdOwoKY29uc3QgTU9ERV9FTU9KSTogUmVjb3JkPHN0cmluZywgc3RyaW5nPiA9IHsKICBjb21wYW5pb246ICJcdUQ4M0VcdURERTEiLAogIGNhc3VhbDogICAgIlx1MjYxNSIsCiAgaW50ZXJ2aWV3OiAiXHVEODNDXHVERkE0IiwKICBlbmdsaXNoOiAgICJcdUQ4M0NcdURGMEQiLAogIHN0dWR5OiAgICAgIlx1RDgzRFx1RENEQSIsCn07Cgpjb25zdCBQUk9NUFRTID0gWwogICJUZWxsIG1lIGFib3V0IHlvdXIgd2Vlay4gV2hhdCB3ZW50IHdlbGw/IiwKICAiTGV0XCdzIHdhcm0gdXAgd2l0aCBhIDItbWludXRlIHNlbGYtaW50cm9kdWN0aW9uLiIsCiAgIkRlc2NyaWJlIHlvdXIgZHJlYW0gcHJvamVjdCBpbiA2MCBzZWNvbmRzLiIsCiAgIldhbGsgbWUgdGhyb3VnaCBhIGRlY2lzaW9uIHlvdSBtYWRlIHJlY2VudGx5LiIsCiAgIldoYXRcJ3Mgb25lIHNraWxsIHlvdSB3YW50IHRvIGltcHJvdmUgdGhpcyBtb250aD8iLAogICJUZWxsIG1lIGFib3V0IGEgY2hhbGxlbmdlIHlvdVwncmUgY3VycmVudGx5IGZhY2luZy4iLApdOwoKZnVuY3Rpb24gZ2V0R3JlZXRpbmcoKSB7CiAgY29uc3QgaCA9IG5ldyBEYXRlKCkuZ2V0SG91cnMoKTsKICBpZiAoaCA8IDEyKSByZXR1cm4gIkdvb2QgbW9ybmluZyI7CiAgaWYgKGggPCAxNykgcmV0dXJuICJHb29kIGFmdGVybm9vbiI7CiAgcmV0dXJuICJHb29kIGV2ZW5pbmciOwp9CgovLyDilIDilIDilIAgU2hhcmVkIG5hdiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKZnVuY3Rpb24gTmF2KHsgdGFiLCBzZXRUYWIsIG5hdmlnYXRlIH06IHsgdGFiOiBUYWI7IHNldFRhYjogKHQ6IFRhYikgPT4gdm9pZDsgbmF2aWdhdGU6IFJldHVyblR5cGU8dHlwZW9mIHVzZU5hdmlnYXRlPiB9KSB7CiAgcmV0dXJuICgKICAgIDxuYXYgc3R5bGU9e3sKICAgICAgcG9zaXRpb246ICJzdGlja3kiLCB0b3A6IDAsIHpJbmRleDogMjAsCiAgICAgIGRpc3BsYXk6ICJmbGV4IiwgYWxpZ25JdGVtczogImNlbnRlciIsIGdhcDogMCwKICAgICAgcGFkZGluZzogIjAgMjBweCIsIGhlaWdodDogNDgsCiAgICAgIGJhY2tncm91bmQ6ICJ2YXIoLS1iYWNrZ3JvdW5kKSIsCiAgICAgIGJvcmRlckJvdHRvbTogIjFweCBzb2xpZCB2YXIoLS1ib3JkZXIpIiwKICAgIH19PgogICAgICB7LyogQnJhbmQgKi99CiAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogImZsZXgiLCBhbGlnbkl0ZW1zOiAiY2VudGVyIiwgZ2FwOiA3LCBtYXJnaW5SaWdodDogMjAgfX0+CiAgICAgICAgPHNwYW4gc3R5bGU9e3sgd2lkdGg6IDcsIGhlaWdodDogNywgYm9yZGVyUmFkaXVzOiAiNTAlIiwgYmFja2dyb3VuZDogInZhcigtLXByaW1hcnkpIiwgZGlzcGxheTogImlubGluZS1ibG9jayIsIGZsZXhTaHJpbms6IDAgfX0gLz4KICAgICAgICA8c3BhbiBzdHlsZT17eyBmb250U2l6ZTogMTIsIGZvbnRXZWlnaHQ6IDYwMCwgbGV0dGVyU3BhY2luZzogIjAuMTJlbSIsIGNvbG9yOiAidmFyKC0tZm9yZWdyb3VuZCkiLCB0ZXh0VHJhbnNmb3JtOiAidXBwZXJjYXNlIiB9fT5hcmlhPC9zcGFuPgogICAgICA8L2Rpdj4KCiAgICAgIHsvKiBUYWJzICovfQogICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICJmbGV4IiwgZ2FwOiAyLCBmbGV4OiAxIH19PgogICAgICAgIHtUQUJTLm1hcCgodCkgPT4gKAogICAgICAgICAgPGJ1dHRvbiBrZXk9e3R9IHR5cGU9ImJ1dHRvbiIKICAgICAgICAgICAgb25DbGljaz17KCkgPT4gewogICAgICAgICAgICAgIGlmICh0ID09PSAiU2Vzc2lvbiIpIHsKICAgICAgICAgICAgICAgIG5hdmlnYXRlKHsgdG86ICIvdGFsay9jb21wYW5pb24iIH0pOwogICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICBzZXRUYWIodCk7CiAgICAgICAgICAgICAgfQogICAgICAgICAgICB9fQogICAgICAgICAgICBzdHlsZT17ewogICAgICAgICAgICAgIHBhZGRpbmc6ICI1cHggMTRweCIsCiAgICAgICAgICAgICAgYm9yZGVyUmFkaXVzOiA4LAogICAgICAgICAgICAgIGJvcmRlcjogIm5vbmUiLAogICAgICAgICAgICAgIGJhY2tncm91bmQ6IHRhYiA9PT0gdCAmJiB0ICE9PSAiU2Vzc2lvbiIgPyAidmFyKC0tY2FyZCkiIDogInRyYW5zcGFyZW50IiwKICAgICAgICAgICAgICBjb2xvcjogdGFiID09PSB0ICYmIHQgIT09ICJTZXNzaW9uIiA/ICJ2YXIoLS1mb3JlZ3JvdW5kKSIgOiAidmFyKC0tbXV0ZWQtZm9yZWdyb3VuZCkiLAogICAgICAgICAgICAgIGZvbnRTaXplOiAxMywKICAgICAgICAgICAgICBmb250V2VpZ2h0OiB0YWIgPT09IHQgPyA1MDAgOiA0MDAsCiAgICAgICAgICAgICAgY3Vyc29yOiAicG9pbnRlciIsCiAgICAgICAgICAgICAgdHJhbnNpdGlvbjogImNvbG9yIDAuMTVzLCBiYWNrZ3JvdW5kIDAuMTVzIiwKICAgICAgICAgICAgfX0KICAgICAgICAgID4KICAgICAgICAgICAge3R9CiAgICAgICAgICA8L2J1dHRvbj4KICAgICAgICApKX0KICAgICAgPC9kaXY+CgogICAgICB7LyogUmlnaHQgKi99CiAgICAgIDxMaW5rIHRvPSIvc2V0dGluZ3MiIHN0eWxlPXt7IGNvbG9yOiAidmFyKC0tbXV0ZWQtZm9yZWdyb3VuZCkiLCBkaXNwbGF5OiAiZmxleCIsIGFsaWduSXRlbXM6ICJjZW50ZXIiLCBwYWRkaW5nOiA2LCBib3JkZXJSYWRpdXM6IDggfX0+CiAgICAgICAgPFNldHRpbmdzIHNpemU9ezE0fSAvPgogICAgICA8L0xpbms+CiAgICA8L25hdj4KICApOwp9CgovLyDilIDilIDilIAgTWFpbiBjb21wb25lbnQg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmZ1bmN0aW9uIERhc2hib2FyZCgpIHsKICBjb25zdCBbdGFiLCBzZXRUYWJdID0gdXNlU3RhdGU8VGFiPigiSG9tZSIpOwogIGNvbnN0IFtzZWxlY3RlZE1vZGUsIHNldFNlbGVjdGVkTW9kZV0gPSB1c2VTdGF0ZTxNb2RlU2x1Zz4oImNvbXBhbmlvbiIpOwogIGNvbnN0IFtwcm9tcHRJZHgsIHNldFByb21wdElkeF0gPSB1c2VTdGF0ZSgwKTsKICBjb25zdCBuYXZpZ2F0ZSA9IHVzZU5hdmlnYXRlKCk7CiAgY29uc3QgeyB1c2VyIH0gPSB1c2VBdXRoKCk7CgogIGNvbnN0IHsgZGF0YTogc2Vzc2lvbnMgPSBbXSB9ID0gdXNlUXVlcnkoewogICAgcXVlcnlLZXk6IFsic2Vzc2lvbnMiLCB1c2VyPy5pZF0sCiAgICBlbmFibGVkOiBCb29sZWFuKHVzZXIpLAogICAgcXVlcnlGbjogYXN5bmMgKCkgPT4gewogICAgICBjb25zdCB7IGRhdGEgfSA9IGF3YWl0IHN1cGFiYXNlCiAgICAgICAgLmZyb20oInNlc3Npb25zIikKICAgICAgICAuc2VsZWN0KCJpZCwgbW9kZSwgdGl0bGUsIGNyZWF0ZWRfYXQsIG1lc3NhZ2VzKGNvdW50KSIpCiAgICAgICAgLm9yZGVyKCJjcmVhdGVkX2F0IiwgeyBhc2NlbmRpbmc6IGZhbHNlIH0pCiAgICAgICAgLmxpbWl0KDMwKTsKICAgICAgcmV0dXJuIGRhdGEgPz8gW107CiAgICB9LAogIH0pOwoKICBjb25zdCBzZXNzaW9uQ291bnQgPSBzZXNzaW9ucy5sZW5ndGg7CiAgY29uc3QgdG90YWxNZXNzYWdlcyA9IHNlc3Npb25zLnJlZHVjZSgocywgcikgPT4gcyArIChyLm1lc3NhZ2VzPy5bMF0/LmNvdW50ID8/IDApLCAwKTsKICBjb25zdCB0b3BNb2RlID0gdXNlTWVtbygoKSA9PiB7CiAgICBjb25zdCBmcmVxOiBSZWNvcmQ8c3RyaW5nLCBudW1iZXI+ID0ge307CiAgICBmb3IgKGNvbnN0IHMgb2Ygc2Vzc2lvbnMpIGZyZXFbcy5tb2RlXSA9IChmcmVxW3MubW9kZV0gPz8gMCkgKyAxOwogICAgY29uc3QgdG9wID0gT2JqZWN0LmVudHJpZXMoZnJlcSkuc29ydCgoYSwgYikgPT4gYlsxXSAtIGFbMV0pWzBdOwogICAgcmV0dXJuIHRvcCA/IGdldE1vZGUodG9wWzBdKS5uYW1lIDogIuKAlCI7CiAgfSwgW3Nlc3Npb25zXSk7CgogIGNvbnN0IHJlY2VudFNlc3Npb25zID0gc2Vzc2lvbnMuc2xpY2UoMCwgNSk7CgogIHJldHVybiAoCiAgICA8ZGl2IHN0eWxlPXt7IG1pbkhlaWdodDogIjEwMHZoIiwgYmFja2dyb3VuZDogInZhcigtLWJhY2tncm91bmQpIiwgY29sb3I6ICJ2YXIoLS1mb3JlZ3JvdW5kKSIsIGZvbnRGYW1pbHk6ICJ2YXIoLS1mb250LXNhbnMpIiB9fT4KICAgICAgPE5hdiB0YWI9e3RhYn0gc2V0VGFiPXtzZXRUYWJ9IG5hdmlnYXRlPXtuYXZpZ2F0ZX0gLz4KCiAgICAgIDxtYWluIHN0eWxlPXt7IG1heFdpZHRoOiAxMDgwLCBtYXJnaW46ICIwIGF1dG8iLCBwYWRkaW5nOiAiMCAyMHB4IDQ4cHgiIH19PgogICAgICAgIHt0YWIgPT09ICJIb21lIiAmJiAoCiAgICAgICAgICA8SG9tZVRhYgogICAgICAgICAgICBzZXNzaW9ucz17cmVjZW50U2Vzc2lvbnN9CiAgICAgICAgICAgIHNlc3Npb25Db3VudD17c2Vzc2lvbkNvdW50fQogICAgICAgICAgICB0b3RhbE1lc3NhZ2VzPXt0b3RhbE1lc3NhZ2VzfQogICAgICAgICAgICB0b3BNb2RlPXt0b3BNb2RlfQogICAgICAgICAgICBwcm9tcHRJZHg9e3Byb21wdElkeH0KICAgICAgICAgICAgc2V0UHJvbXB0SWR4PXtzZXRQcm9tcHRJZHh9CiAgICAgICAgICAgIG5hdmlnYXRlPXtuYXZpZ2F0ZX0KICAgICAgICAgIC8+CiAgICAgICAgKX0KICAgICAgICB7dGFiID09PSAiUHJhY3RpY2UiICYmICgKICAgICAgICAgIDxQcmFjdGljZVRhYiBzZWxlY3RlZE1vZGU9e3NlbGVjdGVkTW9kZX0gc2V0U2VsZWN0ZWRNb2RlPXtzZXRTZWxlY3RlZE1vZGV9IG5hdmlnYXRlPXtuYXZpZ2F0ZX0gLz4KICAgICAgICApfQogICAgICAgIHt0YWIgPT09ICJGZWVkYmFjayIgJiYgKAogICAgICAgICAgPEZlZWRiYWNrVGFiIHNlc3Npb25zPXtzZXNzaW9uc30gLz4KICAgICAgICApfQogICAgICA8L21haW4+CiAgICA8L2Rpdj4KICApOwp9CgovLyDilIDilIDilIAgSG9tZSBUYWIg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmZ1bmN0aW9uIEhvbWVUYWIoewogIHNlc3Npb25zLCBzZXNzaW9uQ291bnQsIHRvdGFsTWVzc2FnZXMsIHRvcE1vZGUsIHByb21wdElkeCwgc2V0UHJvbXB0SWR4LCBuYXZpZ2F0ZSwKfTogewogIHNlc3Npb25zOiBhbnlbXTsKICBzZXNzaW9uQ291bnQ6IG51bWJlcjsKICB0b3RhbE1lc3NhZ2VzOiBudW1iZXI7CiAgdG9wTW9kZTogc3RyaW5nOwogIHByb21wdElkeDogbnVtYmVyOwogIHNldFByb21wdElkeDogKGk6IG51bWJlcikgPT4gdm9pZDsKICBuYXZpZ2F0ZTogUmV0dXJuVHlwZTx0eXBlb2YgdXNlTmF2aWdhdGU+Owp9KSB7CiAgY29uc3Qgc3RhdHMgPSBbCiAgICB7IGxhYmVsOiAiU2Vzc2lvbnMiLCAgdmFsdWU6IHNlc3Npb25Db3VudCB9LAogICAgeyBsYWJlbDogIk1lc3NhZ2VzIiwgIHZhbHVlOiB0b3RhbE1lc3NhZ2VzIH0sCiAgICB7IGxhYmVsOiAiVG9wIG1vZGUiLCAgdmFsdWU6IHRvcE1vZGUgfSwKICBdOwoKICByZXR1cm4gKAogICAgPGRpdiBzdHlsZT17eyBkaXNwbGF5OiAiZmxleCIsIGdhcDogMCwgcGFkZGluZ1RvcDogMzIgfX0+CiAgICAgIHsvKiDilIDilIAgTGVmdCBzaWRlYmFyIOKUgOKUgCAqL30KICAgICAgPGRpdiBzdHlsZT17ewogICAgICAgIHdpZHRoOiAyNDAsIGZsZXhTaHJpbms6IDAsIHBhZGRpbmdSaWdodDogMjgsCiAgICAgICAgYm9yZGVyUmlnaHQ6ICIxcHggc29saWQgdmFyKC0tYm9yZGVyKSIsCiAgICAgIH19PgogICAgICAgIHsvKiBHcmVldGluZyAqL30KICAgICAgICA8cCBzdHlsZT17eyBmb250U2l6ZTogMTEsIGNvbG9yOiAidmFyKC0tbXV0ZWQtZm9yZWdyb3VuZCkiLCBsZXR0ZXJTcGFjaW5nOiAiMC4wOGVtIiwgdGV4dFRyYW5zZm9ybTogInVwcGVyY2FzZSIsIG1hcmdpbkJvdHRvbTogNCB9fT4KICAgICAgICAgIHtnZXRHcmVldGluZygpfQogICAgICAgIDwvcD4KICAgICAgICA8aDEgc3R5bGU9e3sgZm9udFNpemU6IDIyLCBmb250V2VpZ2h0OiA2MDAsIGxpbmVIZWlnaHQ6IDEuMjUsIG1hcmdpbkJvdHRvbTogMjQgfX0+UmVhZHkgdG8gcHJhY3RpY2U/PC9oMT4KCiAgICAgICAgey8qIFN0YXRzICovfQogICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogImZsZXgiLCBmbGV4RGlyZWN0aW9uOiAiY29sdW1uIiwgZ2FwOiAxMiwgbWFyZ2luQm90dG9tOiAyOCB9fT4KICAgICAgICAgIHtzdGF0cy5tYXAoKHMpID0+ICgKICAgICAgICAgICAgPGRpdiBrZXk9e3MubGFiZWx9IHN0eWxlPXt7IGRpc3BsYXk6ICJmbGV4IiwganVzdGlmeUNvbnRlbnQ6ICJzcGFjZS1iZXR3ZWVuIiwgYWxpZ25JdGVtczogImJhc2VsaW5lIiB9fT4KICAgICAgICAgICAgICA8c3BhbiBzdHlsZT17eyBmb250U2l6ZTogMTIsIGNvbG9yOiAidmFyKC0tbXV0ZWQtZm9yZWdyb3VuZCkiIH19PntzLmxhYmVsfTwvc3Bhbj4KICAgICAgICAgICAgICA8c3BhbiBzdHlsZT17eyBmb250U2l6ZTogMTMsIGZvbnRXZWlnaHQ6IDUwMCwgY29sb3I6ICJ2YXIoLS1mb3JlZ3JvdW5kKSIgfX0+e3MudmFsdWV9PC9zcGFuPgogICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICkpfQogICAgICAgIDwvZGl2PgoKICAgICAgICA8ZGl2IHN0eWxlPXt7IGhlaWdodDogMSwgYmFja2dyb3VuZDogInZhcigtLWJvcmRlcikiLCBtYXJnaW5Cb3R0b206IDIwIH19IC8+CgogICAgICAgIHsvKiBRdWljayBsaW5rcyAqL30KICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICJmbGV4IiwgZmxleERpcmVjdGlvbjogImNvbHVtbiIsIGdhcDogOCB9fT4KICAgICAgICAgIDxMaW5rIHRvPSIvaGlzdG9yeSIgc3R5bGU9e3sgZm9udFNpemU6IDEyLCBjb2xvcjogInZhcigtLW11dGVkLWZvcmVncm91bmQpIiwgdGV4dERlY29yYXRpb246ICJub25lIiB9fQogICAgICAgICAgICBjbGFzc05hbWU9ImhvdmVyOnRleHQtZm9yZWdyb3VuZCB0cmFuc2l0aW9uLWNvbG9ycyI+SGlzdG9yeTwvTGluaz4KICAgICAgICAgIDxMaW5rIHRvPSIvc2V0dGluZ3MiIHN0eWxlPXt7IGZvbnRTaXplOiAxMiwgY29sb3I6ICJ2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKSIsIHRleHREZWNvcmF0aW9uOiAibm9uZSIgfX0KICAgICAgICAgICAgY2xhc3NOYW1lPSJob3Zlcjp0ZXh0LWZvcmVncm91bmQgdHJhbnNpdGlvbi1jb2xvcnMiPlNldHRpbmdzPC9MaW5rPgogICAgICAgICAgPExpbmsgdG89Ii9zZXR1cCIgc3R5bGU9e3sgZm9udFNpemU6IDEyLCBjb2xvcjogInZhcigtLW11dGVkLWZvcmVncm91bmQpIiwgdGV4dERlY29yYXRpb246ICJub25lIiB9fQogICAgICAgICAgICBjbGFzc05hbWU9ImhvdmVyOnRleHQtZm9yZWdyb3VuZCB0cmFuc2l0aW9uLWNvbG9ycyI+Q29uZmlndXJlIEFJIGtleTwvTGluaz4KICAgICAgICA8L2Rpdj4KICAgICAgPC9kaXY+CgogICAgICB7Lyog4pSA4pSAIFJpZ2h0IG1haW4g4pSA4pSAICovfQogICAgICA8ZGl2IHN0eWxlPXt7IGZsZXg6IDEsIHBhZGRpbmdMZWZ0OiAzMiB9fT4KICAgICAgICB7LyogUXVpY2sgc3RhcnQgY2FyZCAqL30KICAgICAgICA8ZGl2IHN0eWxlPXt7CiAgICAgICAgICBib3JkZXI6ICIxcHggc29saWQgdmFyKC0tYm9yZGVyKSIsCiAgICAgICAgICBib3JkZXJSYWRpdXM6IDE0LAogICAgICAgICAgcGFkZGluZzogIjIwcHggMjJweCIsCiAgICAgICAgICBtYXJnaW5Cb3R0b206IDI0LAogICAgICAgICAgYmFja2dyb3VuZDogInZhcigtLWNhcmQpIiwKICAgICAgICB9fT4KICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogImZsZXgiLCBhbGlnbkl0ZW1zOiAiY2VudGVyIiwganVzdGlmeUNvbnRlbnQ6ICJzcGFjZS1iZXR3ZWVuIiwgbWFyZ2luQm90dG9tOiAxMCB9fT4KICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZm9udFNpemU6IDExLCBmb250V2VpZ2h0OiA2MDAsIGxldHRlclNwYWNpbmc6ICIwLjFlbSIsIHRleHRUcmFuc2Zvcm06ICJ1cHBlcmNhc2UiLCBjb2xvcjogInZhcigtLW11dGVkLWZvcmVncm91bmQpIiB9fT4KICAgICAgICAgICAgICBUb2RheVwncyB3YXJtLXVwCiAgICAgICAgICAgIDwvc3Bhbj4KICAgICAgICAgICAgPGJ1dHRvbiB0eXBlPSJidXR0b24iIG9uQ2xpY2s9eygpID0+IHNldFByb21wdElkeCgocHJvbXB0SWR4ICsgMSkgJSBQUk9NUFRTLmxlbmd0aCl9CiAgICAgICAgICAgICAgc3R5bGU9e3sgYmFja2dyb3VuZDogIm5vbmUiLCBib3JkZXI6ICJub25lIiwgY3Vyc29yOiAicG9pbnRlciIsIGNvbG9yOiAidmFyKC0tbXV0ZWQtZm9yZWdyb3VuZCkiLCBkaXNwbGF5OiAiZmxleCIsIGFsaWduSXRlbXM6ICJjZW50ZXIiLCBnYXA6IDQsIGZvbnRTaXplOiAxMSB9fQogICAgICAgICAgICAgIGNsYXNzTmFtZT0iaG92ZXI6dGV4dC1mb3JlZ3JvdW5kIHRyYW5zaXRpb24tY29sb3JzIj4KICAgICAgICAgICAgICA8U2h1ZmZsZSBzaXplPXsxMn0gLz4gU2h1ZmZsZQogICAgICAgICAgICA8L2J1dHRvbj4KICAgICAgICAgIDwvZGl2PgogICAgICAgICAgPHAgc3R5bGU9e3sgZm9udFNpemU6IDE0LCBsaW5lSGVpZ2h0OiAxLjYsIG1hcmdpbkJvdHRvbTogMTYsIGNvbG9yOiAidmFyKC0tZm9yZWdyb3VuZCkiIH19PgogICAgICAgICAgICAmbGRxdW87e1BST01QVFNbcHJvbXB0SWR4XX0mcmRxdW87CiAgICAgICAgICA8L3A+CiAgICAgICAgICA8YnV0dG9uIHR5cGU9ImJ1dHRvbiIKICAgICAgICAgICAgb25DbGljaz17KCkgPT4gbmF2aWdhdGUoeyB0bzogIi90YWxrL2NvbXBhbmlvbiIgfSl9CiAgICAgICAgICAgIHN0eWxlPXt7CiAgICAgICAgICAgICAgYmFja2dyb3VuZDogInZhcigtLXByaW1hcnkpIiwgY29sb3I6ICJ2YXIoLS1wcmltYXJ5LWZvcmVncm91bmQpIiwKICAgICAgICAgICAgICBib3JkZXI6ICJub25lIiwgYm9yZGVyUmFkaXVzOiA4LCBwYWRkaW5nOiAiOXB4IDE4cHgiLAogICAgICAgICAgICAgIGZvbnRTaXplOiAxMywgZm9udFdlaWdodDogNTAwLCBjdXJzb3I6ICJwb2ludGVyIiwKICAgICAgICAgICAgfX0+CiAgICAgICAgICAgIFN0YXJ0IHNlc3Npb24KICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgIDwvZGl2PgoKICAgICAgICB7LyogTW9kZSBsaXN0ICovfQogICAgICAgIDxwIHN0eWxlPXt7IGZvbnRTaXplOiAxMSwgZm9udFdlaWdodDogNjAwLCBsZXR0ZXJTcGFjaW5nOiAiMC4xZW0iLCB0ZXh0VHJhbnNmb3JtOiAidXBwZXJjYXNlIiwgY29sb3I6ICJ2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKSIsIG1hcmdpbkJvdHRvbTogMTIgfX0+CiAgICAgICAgICBNb2RlcwogICAgICAgIDwvcD4KICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICJmbGV4IiwgZmxleERpcmVjdGlvbjogImNvbHVtbiIsIGdhcDogNCwgbWFyZ2luQm90dG9tOiAyOCB9fT4KICAgICAgICAgIHtNT0RFUy5tYXAoKG1vZGUpID0+ICgKICAgICAgICAgICAgPGJ1dHRvbiBrZXk9e21vZGUuc2x1Z30gdHlwZT0iYnV0dG9uIgogICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IG5hdmlnYXRlKHsgdG86ICIvdGFsay8kbW9kZSIsIHBhcmFtczogeyBtb2RlOiBtb2RlLnNsdWcgfSB9KX0KICAgICAgICAgICAgICBzdHlsZT17ewogICAgICAgICAgICAgICAgZGlzcGxheTogImZsZXgiLCBhbGlnbkl0ZW1zOiAiY2VudGVyIiwgZ2FwOiAxMiwKICAgICAgICAgICAgICAgIHBhZGRpbmc6ICIxMXB4IDE0cHgiLCBib3JkZXJSYWRpdXM6IDEwLAogICAgICAgICAgICAgICAgYm9yZGVyOiAiMXB4IHNvbGlkIHRyYW5zcGFyZW50IiwKICAgICAgICAgICAgICAgIGJhY2tncm91bmQ6ICJ0cmFuc3BhcmVudCIsCiAgICAgICAgICAgICAgICBjdXJzb3I6ICJwb2ludGVyIiwKICAgICAgICAgICAgICAgIHRleHRBbGlnbjogImxlZnQiLAogICAgICAgICAgICAgICAgdHJhbnNpdGlvbjogImJvcmRlci1jb2xvciAwLjE1cywgYmFja2dyb3VuZCAwLjE1cyIsCiAgICAgICAgICAgICAgfX0KICAgICAgICAgICAgICBjbGFzc05hbWU9ImhvdmVyOmJvcmRlci1ib3JkZXIgaG92ZXI6YmctY2FyZCIKICAgICAgICAgICAgPgogICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IGZvbnRTaXplOiAxNiwgd2lkdGg6IDI0LCB0ZXh0QWxpZ246ICJjZW50ZXIiLCBmbGV4U2hyaW5rOiAwIH19PntNT0RFX0VNT0pJW21vZGUuc2x1Z10gPz8gIlx1RDgzRFx1RENBMSJ9PC9zcGFuPgogICAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZmxleDogMSwgbWluV2lkdGg6IDAgfX0+CiAgICAgICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGZvbnRTaXplOiAxMywgZm9udFdlaWdodDogNTAwLCBjb2xvcjogInZhcigtLWZvcmVncm91bmQpIiwgbWFyZ2luQm90dG9tOiAxIH19Pnttb2RlLm5hbWV9PC9kaXY+CiAgICAgICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGZvbnRTaXplOiAxMSwgY29sb3I6ICJ2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKSIsIG92ZXJmbG93OiAiaGlkZGVuIiwgdGV4dE92ZXJmbG93OiAiZWxsaXBzaXMiLCB3aGl0ZVNwYWNlOiAibm93cmFwIiB9fT57bW9kZS50YWdsaW5lfTwvZGl2PgogICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IGZvbnRTaXplOiAxNCwgY29sb3I6ICJ2YXIoLS1ib3JkZXIpIiwgZmxleFNocmluazogMCB9fT7igLo8L3NwYW4+CiAgICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgICAgKSl9CiAgICAgICAgPC9kaXY+CgogICAgICAgIHsvKiBSZWNlbnQgc2Vzc2lvbnMgKi99CiAgICAgICAge3Nlc3Npb25zLmxlbmd0aCA+IDAgJiYgKAogICAgICAgICAgPD4KICAgICAgICAgICAgPHAgc3R5bGU9e3sgZm9udFNpemU6IDExLCBmb250V2VpZ2h0OiA2MDAsIGxldHRlclNwYWNpbmc6ICIwLjFlbSIsIHRleHRUcmFuc2Zvcm06ICJ1cHBlcmNhc2UiLCBjb2xvcjogInZhcigtLW11dGVkLWZvcmVncm91bmQpIiwgbWFyZ2luQm90dG9tOiAxMiB9fT4KICAgICAgICAgICAgICBSZWNlbnQKICAgICAgICAgICAgPC9wPgogICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICJmbGV4IiwgZmxleERpcmVjdGlvbjogImNvbHVtbiIsIGdhcDogNCB9fT4KICAgICAgICAgICAgICB7c2Vzc2lvbnMubWFwKChzKSA9PiB7CiAgICAgICAgICAgICAgICBjb25zdCBjb3VudCA9IHMubWVzc2FnZXM/LlswXT8uY291bnQgPz8gMDsKICAgICAgICAgICAgICAgIHJldHVybiAoCiAgICAgICAgICAgICAgICAgIDxMaW5rIGtleT17cy5pZH0KICAgICAgICAgICAgICAgICAgICB0bz0iL3RhbGsvJG1vZGUiCiAgICAgICAgICAgICAgICAgICAgcGFyYW1zPXt7IG1vZGU6IHMubW9kZSBhcyBNb2RlU2x1ZyB9fQogICAgICAgICAgICAgICAgICAgIHNlYXJjaD17eyBzZXNzaW9uOiBzLmlkIH19CiAgICAgICAgICAgICAgICAgICAgc3R5bGU9e3sKICAgICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6ICJmbGV4IiwgYWxpZ25JdGVtczogImNlbnRlciIsIGdhcDogMTAsCiAgICAgICAgICAgICAgICAgICAgICBwYWRkaW5nOiAiMTBweCAxNHB4IiwgYm9yZGVyUmFkaXVzOiAxMCwKICAgICAgICAgICAgICAgICAgICAgIGJvcmRlcjogIjFweCBzb2xpZCB0cmFuc3BhcmVudCIsCiAgICAgICAgICAgICAgICAgICAgICB0ZXh0RGVjb3JhdGlvbjogIm5vbmUiLAogICAgICAgICAgICAgICAgICAgICAgdHJhbnNpdGlvbjogImJvcmRlci1jb2xvciAwLjE1cywgYmFja2dyb3VuZCAwLjE1cyIsCiAgICAgICAgICAgICAgICAgICAgfX0KICAgICAgICAgICAgICAgICAgICBjbGFzc05hbWU9ImhvdmVyOmJvcmRlci1ib3JkZXIgaG92ZXI6YmctY2FyZCIKICAgICAgICAgICAgICAgICAgPgogICAgICAgICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IGZvbnRTaXplOiAxNCwgd2lkdGg6IDIyLCB0ZXh0QWxpZ246ICJjZW50ZXIiLCBmbGV4U2hyaW5rOiAwIH19PntNT0RFX0VNT0pJW3MubW9kZV0gPz8gIlx1RDgzRFx1RENBMSJ9PC9zcGFuPgogICAgICAgICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IGZsZXg6IDEsIGZvbnRTaXplOiAxMywgY29sb3I6ICJ2YXIoLS1mb3JlZ3JvdW5kKSIsIG92ZXJmbG93OiAiaGlkZGVuIiwgdGV4dE92ZXJmbG93OiAiZWxsaXBzaXMiLCB3aGl0ZVNwYWNlOiAibm93cmFwIiB9fT57cy50aXRsZX08L3NwYW4+CiAgICAgICAgICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZm9udFNpemU6IDExLCBjb2xvcjogInZhcigtLW11dGVkLWZvcmVncm91bmQpIiwgZmxleFNocmluazogMCB9fT57Y291bnR9IG1zZzwvc3Bhbj4KICAgICAgICAgICAgICAgICAgPC9MaW5rPgogICAgICAgICAgICAgICAgKTsKICAgICAgICAgICAgICB9KX0KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICA8Lz4KICAgICAgICApfQogICAgICA8L2Rpdj4KICAgIDwvZGl2PgogICk7Cn0KCi8vIOKUgOKUgOKUgCBQcmFjdGljZSBUYWIg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmZ1bmN0aW9uIFByYWN0aWNlVGFiKHsKICBzZWxlY3RlZE1vZGUsIHNldFNlbGVjdGVkTW9kZSwgbmF2aWdhdGUsCn06IHsKICBzZWxlY3RlZE1vZGU6IE1vZGVTbHVnOwogIHNldFNlbGVjdGVkTW9kZTogKG06IE1vZGVTbHVnKSA9PiB2b2lkOwogIG5hdmlnYXRlOiBSZXR1cm5UeXBlPHR5cGVvZiB1c2VOYXZpZ2F0ZT47Cn0pIHsKICBjb25zdCBtb2RlID0gZ2V0TW9kZShzZWxlY3RlZE1vZGUpOwogIHJldHVybiAoCiAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICJmbGV4IiwgZ2FwOiAwLCBwYWRkaW5nVG9wOiAzMiB9fT4KICAgICAgey8qIExlZnQ6IG1vZGUgcGlja2VyICovfQogICAgICA8ZGl2IHN0eWxlPXt7IHdpZHRoOiAyNjAsIGZsZXhTaHJpbms6IDAsIHBhZGRpbmdSaWdodDogMjgsIGJvcmRlclJpZ2h0OiAiMXB4IHNvbGlkIHZhcigtLWJvcmRlcikiIH19PgogICAgICAgIDxwIHN0eWxlPXt7IGZvbnRTaXplOiAxMSwgZm9udFdlaWdodDogNjAwLCBsZXR0ZXJTcGFjaW5nOiAiMC4xZW0iLCB0ZXh0VHJhbnNmb3JtOiAidXBwZXJjYXNlIiwgY29sb3I6ICJ2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKSIsIG1hcmdpbkJvdHRvbTogMTYgfX0+CiAgICAgICAgICBDaG9vc2UgbW9kZQogICAgICAgIDwvcD4KICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICJmbGV4IiwgZmxleERpcmVjdGlvbjogImNvbHVtbiIsIGdhcDogMyB9fT4KICAgICAgICAgIHtNT0RFUy5tYXAoKG0pID0+ICgKICAgICAgICAgICAgPGJ1dHRvbiBrZXk9e20uc2x1Z30gdHlwZT0iYnV0dG9uIgogICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IHNldFNlbGVjdGVkTW9kZShtLnNsdWcgYXMgTW9kZVNsdWcpfQogICAgICAgICAgICAgIHN0eWxlPXt7CiAgICAgICAgICAgICAgICBkaXNwbGF5OiAiZmxleCIsIGFsaWduSXRlbXM6ICJjZW50ZXIiLCBnYXA6IDEwLAogICAgICAgICAgICAgICAgcGFkZGluZzogIjEwcHggMTJweCIsIGJvcmRlclJhZGl1czogMTAsCiAgICAgICAgICAgICAgICBib3JkZXI6IHNlbGVjdGVkTW9kZSA9PT0gbS5zbHVnID8gIjFweCBzb2xpZCB2YXIoLS1wcmltYXJ5KSIgOiAiMXB4IHNvbGlkIHRyYW5zcGFyZW50IiwKICAgICAgICAgICAgICAgIGJhY2tncm91bmQ6IHNlbGVjdGVkTW9kZSA9PT0gbS5zbHVnID8gInJnYmEodmFyKC0tcHJpbWFyeSksIDAuMDgpIiA6ICJ0cmFuc3BhcmVudCIsCiAgICAgICAgICAgICAgICBjdXJzb3I6ICJwb2ludGVyIiwgdGV4dEFsaWduOiAibGVmdCIsCiAgICAgICAgICAgICAgICB0cmFuc2l0aW9uOiAiYWxsIDAuMTVzIiwKICAgICAgICAgICAgICB9fQogICAgICAgICAgICAgIGNsYXNzTmFtZT17c2VsZWN0ZWRNb2RlID09PSBtLnNsdWcgPyAiIiA6ICJob3Zlcjpib3JkZXItYm9yZGVyIGhvdmVyOmJnLWNhcmQifQogICAgICAgICAgICA+CiAgICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZm9udFNpemU6IDE1LCB3aWR0aDogMjIsIHRleHRBbGlnbjogImNlbnRlciIsIGZsZXhTaHJpbms6IDAgfX0+e01PREVfRU1PSklbbS5zbHVnXSA/PyAiXHVEODNEXHVEQ0ExIn08L3NwYW4+CiAgICAgICAgICAgICAgPGRpdiBzdHlsZT17eyBmbGV4OiAxLCBtaW5XaWR0aDogMCB9fT4KICAgICAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZm9udFNpemU6IDEzLCBmb250V2VpZ2h0OiA1MDAsIGNvbG9yOiBzZWxlY3RlZE1vZGUgPT09IG0uc2x1ZyA/ICJ2YXIoLS1wcmltYXJ5KSIgOiAidmFyKC0tZm9yZWdyb3VuZCkiIH19PnttLm5hbWV9PC9kaXY+CiAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAge3NlbGVjdGVkTW9kZSA9PT0gbS5zbHVnICYmICgKICAgICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IHdpZHRoOiA2LCBoZWlnaHQ6IDYsIGJvcmRlclJhZGl1czogIjUwJSIsIGJhY2tncm91bmQ6ICJ2YXIoLS1wcmltYXJ5KSIsIGZsZXhTaHJpbms6IDAgfX0gLz4KICAgICAgICAgICAgICApfQogICAgICAgICAgICA8L2J1dHRvbj4KICAgICAgICAgICkpfQogICAgICAgIDwvZGl2PgogICAgICA8L2Rpdj4KCiAgICAgIHsvKiBSaWdodDogcHJldmlldyArIGJlZ2luICovfQogICAgICA8ZGl2IHN0eWxlPXt7IGZsZXg6IDEsIHBhZGRpbmdMZWZ0OiAzMiwgZGlzcGxheTogImZsZXgiLCBmbGV4RGlyZWN0aW9uOiAiY29sdW1uIiwganVzdGlmeUNvbnRlbnQ6ICJmbGV4LXN0YXJ0IiwgcGFkZGluZ1RvcDogMiB9fT4KICAgICAgICA8ZGl2IHN0eWxlPXt7CiAgICAgICAgICBib3JkZXI6ICIxcHggc29saWQgdmFyKC0tYm9yZGVyKSIsIGJvcmRlclJhZGl1czogMTQsCiAgICAgICAgICBwYWRkaW5nOiAiMjRweCAyNnB4IiwgYmFja2dyb3VuZDogInZhcigtLWNhcmQpIiwgbWFyZ2luQm90dG9tOiAyMCwKICAgICAgICB9fT4KICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogImZsZXgiLCBhbGlnbkl0ZW1zOiAiY2VudGVyIiwgZ2FwOiAxMCwgbWFyZ2luQm90dG9tOiAxNCB9fT4KICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZm9udFNpemU6IDI0IH19PntNT0RFX0VNT0pJW21vZGUuc2x1Z10gPz8gIlx1RDgzRFx1RENBMSJ9PC9zcGFuPgogICAgICAgICAgICA8aDIgc3R5bGU9e3sgZm9udFNpemU6IDE4LCBmb250V2VpZ2h0OiA2MDAsIG1hcmdpbjogMCB9fT57bW9kZS5uYW1lfTwvaDI+CiAgICAgICAgICA8L2Rpdj4KICAgICAgICAgIDxwIHN0eWxlPXt7IGZvbnRTaXplOiAxMywgY29sb3I6ICJ2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKSIsIGxpbmVIZWlnaHQ6IDEuNywgbWFyZ2luQm90dG9tOiAwIH19Pnttb2RlLnRhZ2xpbmV9PC9wPgogICAgICAgIDwvZGl2PgogICAgICAgIDxidXR0b24gdHlwZT0iYnV0dG9uIgogICAgICAgICAgb25DbGljaz17KCkgPT4gbmF2aWdhdGUoeyB0bzogIi90YWxrLyRtb2RlIiwgcGFyYW1zOiB7IG1vZGU6IHNlbGVjdGVkTW9kZSB9IH0pfQogICAgICAgICAgc3R5bGU9e3sKICAgICAgICAgICAgYWxpZ25TZWxmOiAiZmxleC1zdGFydCIsCiAgICAgICAgICAgIGJhY2tncm91bmQ6ICJ2YXIoLS1wcmltYXJ5KSIsIGNvbG9yOiAidmFyKC0tcHJpbWFyeS1mb3JlZ3JvdW5kKSIsCiAgICAgICAgICAgIGJvcmRlcjogIm5vbmUiLCBib3JkZXJSYWRpdXM6IDgsIHBhZGRpbmc6ICIxMHB4IDIycHgiLAogICAgICAgICAgICBmb250U2l6ZTogMTMsIGZvbnRXZWlnaHQ6IDUwMCwgY3Vyc29yOiAicG9pbnRlciIsCiAgICAgICAgICB9fT4KICAgICAgICAgIEJlZ2luIHNlc3Npb24KICAgICAgICA8L2J1dHRvbj4KICAgICAgPC9kaXY+CiAgICA8L2Rpdj4KICApOwp9CgovLyDilIDilIDilIAgRmVlZGJhY2sgVGFiIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApmdW5jdGlvbiBGZWVkYmFja1RhYih7IHNlc3Npb25zIH06IHsgc2Vzc2lvbnM6IGFueVtdIH0pIHsKICBjb25zdCB7IHVzZXIgfSA9IHVzZUF1dGgoKTsKCiAgaWYgKCF1c2VyKSB7CiAgICByZXR1cm4gKAogICAgICA8ZGl2IHN0eWxlPXt7IHBhZGRpbmdUb3A6IDQ4LCBtYXhXaWR0aDogNDQwIH19PgogICAgICAgIDxoMiBzdHlsZT17eyBmb250U2l6ZTogMTgsIGZvbnRXZWlnaHQ6IDYwMCwgbWFyZ2luQm90dG9tOiAxMiB9fT5Zb3VyIHNlc3Npb25zPC9oMj4KICAgICAgICA8cCBzdHlsZT17eyBmb250U2l6ZTogMTMsIGNvbG9yOiAidmFyKC0tbXV0ZWQtZm9yZWdyb3VuZCkiLCBtYXJnaW5Cb3R0b206IDE2IH19PgogICAgICAgICAgU2lnbiBpbiB0byBrZWVwIHlvdXIgc2Vzc2lvbiBoaXN0b3J5IGFjcm9zcyBkZXZpY2VzLgogICAgICAgIDwvcD4KICAgICAgICA8TGluayB0bz0iL2F1dGgiIHN0eWxlPXt7CiAgICAgICAgICBkaXNwbGF5OiAiaW5saW5lLWJsb2NrIiwKICAgICAgICAgIGJhY2tncm91bmQ6ICJ2YXIoLS1wcmltYXJ5KSIsIGNvbG9yOiAidmFyKC0tcHJpbWFyeS1mb3JlZ3JvdW5kKSIsCiAgICAgICAgICBib3JkZXJSYWRpdXM6IDgsIHBhZGRpbmc6ICI5cHggMThweCIsCiAgICAgICAgICBmb250U2l6ZTogMTMsIGZvbnRXZWlnaHQ6IDUwMCwgdGV4dERlY29yYXRpb246ICJub25lIiwKICAgICAgICB9fT5TaWduIGluPC9MaW5rPgogICAgICA8L2Rpdj4KICAgICk7CiAgfQoKICByZXR1cm4gKAogICAgPGRpdiBzdHlsZT17eyBwYWRkaW5nVG9wOiAzMiwgbWF4V2lkdGg6IDY4MCB9fT4KICAgICAgPGRpdiBzdHlsZT17eyBkaXNwbGF5OiAiZmxleCIsIGFsaWduSXRlbXM6ICJiYXNlbGluZSIsIGp1c3RpZnlDb250ZW50OiAic3BhY2UtYmV0d2VlbiIsIG1hcmdpbkJvdHRvbTogMjAgfX0+CiAgICAgICAgPGgyIHN0eWxlPXt7IGZvbnRTaXplOiAxOCwgZm9udFdlaWdodDogNjAwIH19PllvdXIgc2Vzc2lvbnM8L2gyPgogICAgICAgIDxzcGFuIHN0eWxlPXt7IGZvbnRTaXplOiAxMiwgY29sb3I6ICJ2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKSIgfX0+e3Nlc3Npb25zLmxlbmd0aH0gdG90YWw8L3NwYW4+CiAgICAgIDwvZGl2PgoKICAgICAge3Nlc3Npb25zLmxlbmd0aCA9PT0gMCA/ICgKICAgICAgICA8cCBzdHlsZT17eyBmb250U2l6ZTogMTMsIGNvbG9yOiAidmFyKC0tbXV0ZWQtZm9yZWdyb3VuZCkiIH19Pk5vIHNlc3Npb25zIHlldC4gU3RhcnQgYSBjb252ZXJzYXRpb24gdG8gc2VlIGl0IGhlcmUuPC9wPgogICAgICApIDogKAogICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogImZsZXgiLCBmbGV4RGlyZWN0aW9uOiAiY29sdW1uIiwgZ2FwOiA0IH19PgogICAgICAgICAge3Nlc3Npb25zLm1hcCgocykgPT4gewogICAgICAgICAgICBjb25zdCBjb3VudCA9IHMubWVzc2FnZXM/LlswXT8uY291bnQgPz8gMDsKICAgICAgICAgICAgY29uc3QgZGF0ZSA9IG5ldyBEYXRlKHMuY3JlYXRlZF9hdCkudG9Mb2NhbGVEYXRlU3RyaW5nKHVuZGVmaW5lZCwgeyBtb250aDogInNob3J0IiwgZGF5OiAibnVtZXJpYyIgfSk7CiAgICAgICAgICAgIHJldHVybiAoCiAgICAgICAgICAgICAgPGRpdiBrZXk9e3MuaWR9IHN0eWxlPXt7CiAgICAgICAgICAgICAgICBkaXNwbGF5OiAiZmxleCIsIGFsaWduSXRlbXM6ICJjZW50ZXIiLCBnYXA6IDEyLAogICAgICAgICAgICAgICAgcGFkZGluZzogIjEycHggMTRweCIsIGJvcmRlclJhZGl1czogMTAsCiAgICAgICAgICAgICAgICBib3JkZXI6ICIxcHggc29saWQgdmFyKC0tYm9yZGVyKSIsCiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAidmFyKC0tY2FyZCkiLAogICAgICAgICAgICAgIH19PgogICAgICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZm9udFNpemU6IDE1LCB3aWR0aDogMjIsIHRleHRBbGlnbjogImNlbnRlciIsIGZsZXhTaHJpbms6IDAgfX0+e01PREVfRU1PSklbcy5tb2RlXSA/PyAiXHVEODNEXHVEQ0ExIn08L3NwYW4+CiAgICAgICAgICAgICAgICA8TGluawogICAgICAgICAgICAgICAgICB0bz0iL3RhbGsvJG1vZGUiCiAgICAgICAgICAgICAgICAgIHBhcmFtcz17eyBtb2RlOiBzLm1vZGUgYXMgTW9kZVNsdWcgfX0KICAgICAgICAgICAgICAgICAgc2VhcmNoPXt7IHNlc3Npb246IHMuaWQgfX0KICAgICAgICAgICAgICAgICAgc3R5bGU9e3sgZmxleDogMSwgZm9udFNpemU6IDEzLCBjb2xvcjogInZhcigtLWZvcmVncm91bmQpIiwgdGV4dERlY29yYXRpb246ICJub25lIiwgb3ZlcmZsb3c6ICJoaWRkZW4iLCB0ZXh0T3ZlcmZsb3c6ICJlbGxpcHNpcyIsIHdoaXRlU3BhY2U6ICJub3dyYXAiIH19CiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT0iaG92ZXI6dGV4dC1wcmltYXJ5IHRyYW5zaXRpb24tY29sb3JzIgogICAgICAgICAgICAgICAgPgogICAgICAgICAgICAgICAgICB7cy50aXRsZX0KICAgICAgICAgICAgICAgIDwvTGluaz4KICAgICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IGZvbnRTaXplOiAxMSwgY29sb3I6ICJ2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKSIsIGZsZXhTaHJpbms6IDAsIG1hcmdpblJpZ2h0OiA4IH19Pntjb3VudH0gbXNnPC9zcGFuPgogICAgICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZm9udFNpemU6IDExLCBjb2xvcjogInZhcigtLW11dGVkLWZvcmVncm91bmQpIiwgZmxleFNocmluazogMCB9fT57ZGF0ZX08L3NwYW4+CiAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICk7CiAgICAgICAgICB9KX0KICAgICAgICA8L2Rpdj4KICAgICAgKX0KICAgIDwvZGl2PgogICk7Cn0K
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Settings, History, Shuffle, Play, RotateCcw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { MODES, type ModeSlug } from "@/lib/modes";
+import { hasKey, loadSettings } from "@/lib/keys";
+import { useEffect, useRef, useState, useMemo } from "react";
+
+export const Route = createFileRoute("/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Aria — Home" },
+      { name: "description", content: "Your Aria dashboard" },
+    ],
+  }),
+  component: Dashboard,
+});
+
+// ─── Design tokens (mirrors echo-v3.html :root) ───────────────
+const C = {
+  bg:        "oklch(0.09 0.014 248)",
+  s1:        "oklch(0.16 0.020 248)",
+  s2:        "oklch(0.21 0.022 248)",
+  s3:        "oklch(0.27 0.024 248)",
+  b0:        "oklch(0.24 0.018 248)",
+  b1:        "oklch(0.32 0.022 248)",
+  t1:        "oklch(0.94 0.008 90)",
+  t2:        "oklch(0.78 0.012 248)",
+  t3:        "oklch(0.60 0.012 248)",
+  jade:      "oklch(0.78 0.19 162)",
+  jadeDim:   "oklch(0.20 0.07 162)",
+  jadeMid:   "oklch(0.36 0.12 162)",
+  jadeTxt:   "oklch(0.88 0.12 162)",
+  jadeGlow:  "oklch(0.78 0.19 162 / 0.18)",
+  amber:     "oklch(0.82 0.17 75)",
+  amberDim:  "oklch(0.22 0.06 75)",
+  rose:      "oklch(0.72 0.17 15)",
+  roseDim:   "oklch(0.22 0.07 15)",
+  sky:       "oklch(0.78 0.12 220)",
+  skyDim:    "oklch(0.20 0.06 220)",
+};
+
+// per-mode colors for cards
+const MODE_META: Record<string, { emoji: string; color: string; dim: string; txt: string; label: string; glowRgb: string }> = {
+  interview:     { emoji: "🎤", color: C.rose,  dim: C.roseDim,  txt: "oklch(0.82 0.14 15)",  label: "Intense",  glowRgb: "244,63,94" },
+  companion:     { emoji: "🧡", color: C.jade,  dim: C.jadeDim,  txt: C.jadeTxt,              label: "Friendly", glowRgb: "52,211,153" },
+  english:       { emoji: "🌍", color: C.sky,   dim: C.skyDim,   txt: "oklch(0.82 0.10 220)", label: "Learning", glowRgb: "14,165,233" },
+  communication: { emoji: "💡", color: C.amber, dim: C.amberDim, txt: "oklch(0.86 0.14 75)",  label: "Practice", glowRgb: "245,158,11" },
+  study:         { emoji: "📚", color: "oklch(0.76 0.18 155)", dim: "oklch(0.18 0.07 155)", txt: "oklch(0.84 0.12 155)", label: "Focus", glowRgb: "16,185,129" },
+};
+
+function mm(slug: string) { return MODE_META[slug] ?? MODE_META["companion"]!; }
+
+// ─── Ambient orbs (background) ────────────────────────────────
+function AmbientOrbs() {
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+      <div className="absolute" style={{ width: 480, height: 480, top: -120, left: -160, borderRadius: "50%", background: `radial-gradient(circle,${C.jadeGlow} 0%,transparent 65%)`, filter: "blur(40px)" }} />
+      <div className="absolute" style={{ width: 360, height: 360, top: -60, right: -140, borderRadius: "50%", background: "radial-gradient(circle,rgba(244,63,94,0.12) 0%,transparent 65%)", filter: "blur(48px)" }} />
+      <div className="absolute" style={{ width: 400, height: 400, bottom: -140, left: "30%", borderRadius: "50%", background: "radial-gradient(circle,rgba(14,165,233,0.08) 0%,transparent 65%)", filter: "blur(56px)" }} />
+    </div>
+  );
+}
+
+// ─── Animated Echo mascot (from echo-v3.html) ─────────────────
+function EchoMascot({ size = 90, color = "oklch(0.78 0.19 162)" }: { size?: number; color?: string }) {
+  // Build a safe fill color — avoid appending to colors that already have '/'
+  const shadowColor = color.includes("/") ? color : color.replace(")", " / 0.12)");
+  return (
+    <div style={{ width: size, height: size, animation: "efloat 3.2s ease-in-out infinite", flexShrink: 0 }}>
+      <svg viewBox="0 0 120 120" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="60" cy="108" rx="28" ry="7" fill={shadowColor} />
+        <path d="M60 16C88 16 104 34 104 60C104 86 88 104 60 104C32 104 16 86 16 60C16 34 32 16 60 16Z" fill={color}>
+          <animateTransform attributeName="transform" type="scale" values="1;1.022;1" dur="2.4s" repeatCount="indefinite" additive="sum" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1" />
+        </path>
+        <ellipse cx="48" cy="40" rx="13" ry="8" fill="oklch(0.96 0.04 162 / 0.22)" />
+        <ellipse cx="45" cy="58" rx="12" ry="13" fill="white" />
+        <ellipse cx="75" cy="58" rx="12" ry="13" fill="white" />
+        <ellipse cx="46" cy="59" rx="7" ry="8" fill="oklch(0.14 0.03 248)">
+          <animateTransform attributeName="transform" type="translate" values="0,0;1,0;0,1;-1,0;0,0" dur="4s" repeatCount="indefinite" />
+        </ellipse>
+        <ellipse cx="76" cy="59" rx="7" ry="8" fill="oklch(0.14 0.03 248)">
+          <animateTransform attributeName="transform" type="translate" values="0,0;1,0;0,1;-1,0;0,0" dur="4s" repeatCount="indefinite" />
+        </ellipse>
+        <circle cx="49" cy="54" r="2.5" fill="white" opacity=".9" />
+        <circle cx="79" cy="54" r="2.5" fill="white" opacity=".9" />
+        <ellipse cx="45" cy="58" rx="12" ry="0" fill={color} opacity="0">
+          <animate attributeName="ry" values="0;13;0" dur="5s" begin="1.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;1;0" dur="5s" begin="1.5s" repeatCount="indefinite" />
+        </ellipse>
+        <ellipse cx="75" cy="58" rx="12" ry="0" fill={color} opacity="0">
+          <animate attributeName="ry" values="0;13;0" dur="5s" begin="1.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;1;0" dur="5s" begin="1.5s" repeatCount="indefinite" />
+        </ellipse>
+        <path d="M46 76Q60 90 74 76" stroke="oklch(0.14 0.03 248)" strokeWidth="3" fill="none" strokeLinecap="round" />
+        <ellipse cx="33" cy="70" rx="7" ry="4.5" fill="oklch(0.75 0.18 20 / 0.35)" />
+        <ellipse cx="87" cy="70" rx="7" ry="4.5" fill="oklch(0.75 0.18 20 / 0.35)" />
+        <path d="M42 96Q30 112 20 102Q26 90 40 88Z" fill={color} opacity=".9">
+          <animateTransform attributeName="transform" type="rotate" from="-4 42 96" to="6 42 96" dur="1.8s" repeatCount="indefinite" additive="sum" />
+        </path>
+      </svg>
+    </div>
+  );
+}
+
+// ─── Skill bar ────────────────────────────────────────────────
+function SkillBar({ name, pct, color }: { name: string; pct: number; color: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 12.5, color: C.t2, fontWeight: 500 }}>{name}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: C.t3 }}>{pct}%</span>
+      </div>
+      <div style={{ height: 5, background: C.s3, borderRadius: 999, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 999, transition: "width 1s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Mode card (Home mode grid — 3-col like echo-v3) ──────────
+function ModeCard({ mode }: { mode: (typeof MODES)[number] }) {
+  const m = mm(mode.slug);
+  const [hov, setHov] = useState(false);
+  return (
+    <Link
+      to="/talk/$mode"
+      params={{ mode: mode.slug as ModeSlug }}
+      style={{
+        padding: "16px",
+        background: hov ? C.s2 : C.s1,
+        border: `1.5px solid ${hov ? C.b1 : C.b0}`,
+        borderRadius: 14,
+        cursor: "pointer",
+        transition: "all 150ms",
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+        textDecoration: "none",
+        transform: hov ? "translateY(-2px)" : "none",
+        boxShadow: hov ? "0 6px 24px rgba(0,0,0,.4)" : "none",
+      }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      <span style={{ fontSize: 22, marginBottom: 7, display: "block" }}>{m.emoji}</span>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.t1, letterSpacing: "-0.01em", marginBottom: 3 }}>{mode.name}</div>
+      <div style={{ fontSize: 11.5, color: C.t3, lineHeight: 1.4 }}>{mode.tagline}</div>
+    </Link>
+  );
+}
+
+// ─── Session row ──────────────────────────────────────────────
+function SessionRow({ mode, title, date, count }: { mode: string; title: string; date: string; count: number }) {
+  const m = mm(mode);
+  const modeObj = MODES.find((x) => x.slug === mode);
+  const [hov, setHov] = useState(false);
+  return (
+    <Link
+      to="/talk/$mode"
+      params={{ mode: mode as ModeSlug }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "11px 14px",
+        background: hov ? C.s2 : C.s1,
+        border: `1px solid ${hov ? C.b1 : C.b0}`,
+        borderRadius: 14,
+        cursor: "pointer",
+        transition: "all 150ms",
+        textDecoration: "none",
+        transform: hov ? "translateX(3px)" : "none",
+      }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: m.dim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+        {m.emoji}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.t1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
+        <div style={{ fontSize: 11.5, color: C.t3, marginTop: 1 }}>
+          {new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          {" · "}{m.emoji} {modeObj?.name ?? mode}
+          {" · "}{count} msg
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: C.t3 }}>→</div>
+    </Link>
+  );
+}
+
+// ─── Practice tab — mode setup picker ─────────────────────────
+function PracticeTab() {
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState("companion");
+  const selectedMode = MODES.find((m) => m.slug === selected) ?? MODES[0]!;
+  return (
+    <div style={{ flex: 1, display: "grid", gridTemplateColumns: "270px 1fr", overflow: "hidden", minHeight: 0 }}>
+      <aside style={{ padding: "24px 18px", borderRight: `1px solid ${C.b0}`, display: "flex", flexDirection: "column", gap: 18, overflowY: "auto", alignItems: "center" }}>
+        <EchoMascot size={90} />
+        <div style={{ background: C.s2, border: `1px solid ${C.b1}`, borderRadius: 14, borderBottomLeftRadius: 4, padding: "12px 16px", fontSize: 13, color: C.t2, maxWidth: 220, lineHeight: 1.45 }}>
+          Let's set the scene! Pick your{" "}
+          <strong style={{ color: C.jadeTxt }}>mode</strong>{" "}
+          — each one has a different vibe 👀
+        </div>
+        <div style={{ width: "100%", padding: 15, background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.t3, marginBottom: 8 }}>Session Preview</div>
+          {([["Mode", selectedMode.name], ["Vibe", mm(selected).label], ["Ready?", "Hit Begin ↓"]] as const).map(([lbl, val]) => (
+            <div key={lbl} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderTop: `1px solid ${C.b0}` }}>
+              <span style={{ fontSize: 12, color: C.t3 }}>{lbl}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.t1 }}>{val}</span>
+            </div>
+          ))}
+        </div>
+      </aside>
+      <main style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 22, overflowY: "auto" }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.jadeTxt, marginBottom: 3 }}>Choose a mode</div>
+          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.15, color: C.t1, fontFamily: "Georgia,serif", marginBottom: 5 }}>What do you want<br />to practise?</div>
+          <div style={{ fontSize: 13, color: C.t3, lineHeight: 1.5 }}>Pick your vibe. Each mode is a different Aria with a different energy.</div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+          {MODES.map((mode) => {
+            const m = mm(mode.slug);
+            const sel = selected === mode.slug;
+            return (
+              <div
+                key={mode.slug}
+                onClick={() => setSelected(mode.slug)}
+                style={{ padding: 14, background: sel ? m.dim : C.s1, border: `1.5px solid ${sel ? m.color : C.b0}`, borderRadius: 14, cursor: "pointer", transition: "all 150ms", boxShadow: sel ? `0 0 0 1px ${m.color},0 4px 20px rgba(${m.glowRgb},.18)` : "none" }}
+              >
+                <div style={{ fontSize: 22, marginBottom: 7 }}>{m.emoji}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.t1, marginBottom: 3 }}>{mode.name}</div>
+                <div style={{ fontSize: 11.5, color: C.t3, lineHeight: 1.4 }}>{mode.tagline}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", paddingTop: 16, borderTop: `1px solid ${C.b0}` }}>
+          <button
+            onClick={() => navigate({ to: "/talk/$mode", params: { mode: selected as ModeSlug } })}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", background: C.jade, color: "oklch(0.1 0.02 162)", borderRadius: 999, fontSize: 15, fontWeight: 800, border: "none", cursor: "pointer" }}
+          >
+            ▶ Begin Session
+          </button>
+          <button
+            onClick={() => navigate({ to: "/talk/$mode", params: { mode: selected as ModeSlug } })}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 18px", background: C.s2, border: `1px solid ${C.b1}`, color: C.t2, borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          >
+            ← Back
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// ─── Feedback tab — history & scores ──────────────────────────
+function FeedbackTab() {
+  const { user } = useAuth();
+  const { data: sessions } = useQuery({
+    queryKey: ["feedback-sessions", user?.id],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sessions")
+        .select("id, mode, title, created_at, messages(count)")
+        .order("created_at", { ascending: false })
+        .limit(12);
+      return (data ?? []) as Array<{ id: string; mode: string; title: string; created_at: string; messages: unknown }>;
+    },
+  });
+
+  const totalSessions = sessions?.length ?? 0;
+  const totalMessages = sessions?.reduce((acc, s) => acc + ((s.messages as Array<{ count: number }>)?.[0]?.count ?? 0), 0) ?? 0;
+  const circumference = 2 * Math.PI * 58; // 364.4
+  const progress = totalSessions > 0 ? Math.min(totalSessions / 20, 1) : 0;
+  const dashOffset = circumference * (1 - progress);
+
+  return (
+    <div style={{ flex: 1, display: "grid", gridTemplateColumns: "310px 1fr", overflow: "hidden", minHeight: 0 }}>
+      <aside style={{ padding: "24px 20px", borderRight: `1px solid ${C.b0}`, display: "flex", flexDirection: "column", gap: 16, alignItems: "center", overflowY: "auto" }}>
+        <EchoMascot size={90} color={C.amber} />
+        <div style={{ background: C.s2, border: `1px solid ${C.b1}`, borderRadius: 14, borderBottomLeftRadius: 4, padding: "12px 16px", fontSize: 13, color: C.t2, lineHeight: 1.45 }}>
+          <strong style={{ color: C.jadeTxt }}>Keep going!</strong> Every session makes Aria smarter about what you need. 🔥
+        </div>
+        {/* Score ring */}
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 140, height: 140 }}>
+          <svg style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }} viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="58" fill="none" stroke={C.s3} strokeWidth="10" />
+            <circle cx="70" cy="70" r="58" fill="none" stroke={C.jade} strokeWidth="10"
+              strokeDasharray={circumference}
+              strokeDashoffset={dashOffset}
+              strokeLinecap="round"
+              style={{ filter: `drop-shadow(0 0 8px ${C.jade})`, transition: "stroke-dashoffset 1.8s ease" }}
+            />
+          </svg>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1 }}>
+            <span style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em", color: C.t1, lineHeight: 1 }}>{totalSessions}</span>
+            <span style={{ fontSize: 11, color: C.t3, fontWeight: 600, marginTop: 2 }}>Sessions</span>
+          </div>
+        </div>
+        {/* Breakdown bars */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 7, width: "100%" }}>
+          {[
+            { name: "Total Messages", val: totalMessages, pct: Math.min(100, totalMessages / 2), color: C.jade },
+            { name: "Avg per session", val: totalSessions > 0 ? Math.round(totalMessages / totalSessions) : 0, pct: Math.min(100, totalSessions > 0 ? (totalMessages / totalSessions) * 5 : 0), color: C.amber },
+          ].map(({ name, val, pct, color }) => (
+            <div key={name} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "12px 13px", background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: C.t2 }}>{name}</span>
+                <span style={{ fontSize: 13, fontWeight: 900, color }}>{val}</span>
+              </div>
+              <div style={{ height: 4, background: C.s3, borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 999 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
+      <main style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 18, overflowY: "auto" }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.jadeTxt, marginBottom: 3 }}>Your history</div>
+          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.15, color: C.t1, fontFamily: "Georgia,serif" }}>Here's your<br />full report</div>
+        </div>
+        {sessions && sessions.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {sessions.map((s) => {
+              const count = (s.messages as Array<{ count: number }>)?.[0]?.count ?? 0;
+              const m = mm(s.mode);
+              return (
+                <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 14 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: m.dim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{m.emoji}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: C.t1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</div>
+                    <div style={{ fontSize: 11.5, color: C.t3, marginTop: 1 }}>
+                      {new Date(s.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {" · "}{count} messages
+                    </div>
+                  </div>
+                  <div style={{ padding: "4px 10px", background: m.dim, borderRadius: 999, fontSize: 11, fontWeight: 700, color: m.txt }}>{m.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ padding: 32, textAlign: "center", background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 14 }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🎙️</div>
+            <div style={{ fontSize: 14, color: C.t2, fontWeight: 600 }}>No sessions yet</div>
+            <div style={{ fontSize: 12, color: C.t3, marginTop: 4 }}>Start a conversation and your history will appear here.</div>
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <Link to="/talk/$mode" params={{ mode: "communication" }} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", background: C.jade, color: "oklch(0.1 0.02 162)", borderRadius: 999, fontSize: 14, fontWeight: 800, border: "none", textDecoration: "none" }}>
+            ↺ Practice Again
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// ─── Home tab (two-column layout matching echo-v3.html) ───────
+function HomeTab({ user, stats, sessions, needsKey }: {
+  user: ReturnType<typeof useAuth>["user"];
+  stats: { totalSessions: number; totalMessages: number } | undefined;
+  sessions: Array<{ id: string; mode: string; title: string; created_at: string; messages: unknown }> | undefined;
+  needsKey: boolean;
+}) {
+  const navigate = useNavigate();
+  const dailyPrompts = [
+    "Tell me about yourself.",
+    "What's your greatest strength?",
+    "Describe a time you led a team under pressure.",
+    "How do you handle feedback?",
+    "Where do you see yourself in 5 years?",
+  ];
+  const [promptIdx, setPromptIdx] = useState(0);
+  const prompt = dailyPrompts[promptIdx]!;
+
+  const skillData = useMemo(() => [
+    { name: "Clarity of speech",  pct: stats ? Math.min(95, 40 + (stats.totalMessages * 2)) : 40, color: C.jade },
+    { name: "Confidence level",   pct: stats ? Math.min(90, 35 + (stats.totalSessions * 3)) : 35, color: C.amber },
+    { name: "Structure & flow",   pct: stats ? Math.min(92, 38 + Math.floor(stats.totalMessages * 1.5)) : 38, color: C.sky },
+    { name: "Pressure handling",  pct: stats ? Math.min(85, 30 + Math.floor(stats.totalSessions * 2.5)) : 30, color: C.rose },
+  ], [stats]);
+
+  const now = new Date();
+  const hour = now.getHours();
+  const tod = hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : "Evening";
+  const dayName = now.toLocaleDateString(undefined, { weekday: "long" });
+  const userName = user?.email?.split("@")[0] ?? "Adventurer";
+
+  return (
+    <div style={{ flex: 1, display: "grid", gridTemplateColumns: "290px 1fr", overflow: "hidden", minHeight: 0 }}>
+
+      {/* ── Left sidebar ── */}
+      <aside style={{ padding: "22px 20px", borderRight: `1px solid ${C.b0}`, display: "flex", flexDirection: "column", gap: 18, overflowY: "auto" }}>
+
+        {/* Greeting card */}
+        <div style={{ background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 28, padding: 18, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.t3, marginBottom: 10 }}>{dayName} {tod}</div>
+          <EchoMascot size={90} />
+          <div style={{ background: C.s2, border: `1px solid ${C.b1}`, borderRadius: 14, borderBottomLeftRadius: 4, padding: "12px 16px", fontSize: 13, color: C.t2, maxWidth: 210, lineHeight: 1.45, marginTop: 10, marginLeft: 8, textAlign: "left" }}>
+            Hey {userName}! Ready to{" "}
+            <strong style={{ color: C.jadeTxt }}>level up</strong>{" "}
+            today? 🔥
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: C.t1, marginTop: 10, lineHeight: 1.2 }}>
+            Good {tod},<br />{userName}
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginTop: 3 }}>
+            {stats && stats.totalSessions > 0
+              ? `${stats.totalSessions} sessions · keep going!`
+              : "Your journey starts here"}
+          </div>
+        </div>
+
+        {/* Stat items */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {([
+            { icon: "🎯", label: "Confidence",  val: stats ? `${Math.min(95, 40 + stats.totalMessages * 2)}%` : "–", color: C.jadeTxt },
+            { icon: "🗣️", label: "Sessions",    val: String(stats?.totalSessions ?? 0),                            color: C.t1 },
+            { icon: "⚡",  label: "Messages",    val: String(stats?.totalMessages ?? 0),                            color: C.amber },
+            { icon: "📚",  label: "Skill level", val: stats ? `${Math.min(92, 38 + stats.totalSessions * 3)}%` : "–", color: C.sky },
+          ] as const).map(({ icon, label, val, color }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 14 }}>
+              <span style={{ fontSize: 12.5, color: C.t3, display: "flex", alignItems: "center", gap: 7 }}>{icon} {label}</span>
+              <span style={{ fontSize: 16, fontWeight: 800, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", color }}>{val}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Skill tracker */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.t3, marginBottom: 2 }}>Skill Tracker</div>
+          {skillData.map((s) => <SkillBar key={s.name} {...s} />)}
+        </div>
+      </aside>
+
+      {/* ── Right main ── */}
+      <main style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
+
+        {needsKey && (
+          <Link
+            to="/setup"
+            style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", background: `linear-gradient(135deg,${C.jadeDim} 0%,${C.skyDim} 100%)`, border: `1px solid oklch(0.78 0.19 162 / 0.25)`, borderRadius: 20, textDecoration: "none" }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.jadeDim, display: "flex", alignItems: "center", justifyContent: "center" }}>⚡</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.t1 }}>Connect your AI key</div>
+              <div style={{ fontSize: 12, color: C.t3 }}>Takes 30 seconds to start talking</div>
+            </div>
+            <span style={{ color: C.t3 }}>→</span>
+          </Link>
+        )}
+
+        {/* Quick start card */}
+        <div style={{ background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 28, padding: "22px 22px 22px 24px", display: "flex", gap: 18, alignItems: "flex-start" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", background: C.jadeDim, border: `1px solid oklch(0.78 0.19 162 / 0.25)`, borderRadius: 999, fontSize: 11, fontWeight: 700, color: C.jadeTxt, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>✦ Daily warmup</div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.15, color: C.t1, fontFamily: "Georgia,serif", marginBottom: 8 }}>"{prompt}"</div>
+            <div style={{ fontSize: 13, color: C.t3, lineHeight: 1.55, marginBottom: 16, maxWidth: "55ch" }}>Aria's picked today's opener just for you. A classic — but harder than it looks. Nail this and you'll nail the room.</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => navigate({ to: "/talk/$mode", params: { mode: "communication" } })}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", background: C.jade, color: "oklch(0.1 0.02 162)", borderRadius: 999, fontSize: 14, fontWeight: 800, border: "none", cursor: "pointer" }}
+              >
+                ▶ Start Session
+              </button>
+              <button
+                onClick={() => setPromptIdx((i) => (i + 1) % dailyPrompts.length)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 18px", background: C.s2, border: `1px solid ${C.b1}`, color: C.t2, borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                🔀 Shuffle
+              </button>
+            </div>
+          </div>
+          <div style={{ flexShrink: 0, alignSelf: "center" }}>
+            <EchoMascot size={64} color={C.amber} />
+          </div>
+        </div>
+
+        {/* Practice Modes — 3-col like echo-v3 */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.t3, marginBottom: 10 }}>Practice Modes</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+            {MODES.map((mode) => <ModeCard key={mode.slug} mode={mode} />)}
+          </div>
+        </div>
+
+        {/* Recent Sessions */}
+        {sessions && sessions.length > 0 && (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.t3, marginBottom: 10 }}>Recent Sessions</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {sessions.map((s) => {
+                const count = (s.messages as Array<{ count: number }>)?.[0]?.count ?? 0;
+                return <SessionRow key={s.id} mode={s.mode} title={s.title} date={s.created_at} count={count} />;
+              })}
+            </div>
+          </div>
+        )}
+
+        {!user && (
+          <div style={{ padding: 32, textAlign: "center", background: C.s1, border: `1px solid ${C.b0}`, borderRadius: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.t1, marginBottom: 4 }}>Sign in to track progress</div>
+            <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>Save conversations and watch your skills grow.</div>
+            <Link to="/auth" style={{ display: "inline-flex", padding: "10px 24px", background: C.jade, color: "oklch(0.1 0.02 162)", borderRadius: 999, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>Sign in</Link>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ─── Main Dashboard ───────────────────────────────────────────
+type Tab = "home" | "practice" | "feedback";
+
+function Dashboard() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<Tab>("home");
+  const [needsKey, setNeedsKey] = useState(false);
+
+  useEffect(() => { setNeedsKey(!hasKey(loadSettings())); }, []);
+
+  const { data: sessions } = useQuery({
+    queryKey: ["sessions", user?.id, "recent"],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sessions")
+        .select("id, mode, title, created_at, messages(count)")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return (data ?? []) as Array<{ id: string; mode: string; title: string; created_at: string; messages: unknown }>;
+    },
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["stats", user?.id],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const { count: totalSessions } = await supabase.from("sessions").select("*", { count: "exact", head: true });
+      const { count: totalMessages } = await supabase.from("messages").select("*", { count: "exact", head: true });
+      return { totalSessions: totalSessions ?? 0, totalMessages: totalMessages ?? 0 };
+    },
+  });
+
+  const TABS: { id: Tab | "session"; label: string }[] = [
+    { id: "home",     label: "Home" },
+    { id: "practice", label: "Practice" },
+    { id: "session",  label: "Session" },
+    { id: "feedback", label: "Feedback" },
+  ];
+
+  return (
+    <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", background: C.bg, color: C.t1, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif", fontSize: 15, lineHeight: 1.5, WebkitFontSmoothing: "antialiased" }}>
+      <AmbientOrbs />
+
+      {/* ── Nav bar (echo-v3 exact style) ── */}
+      <nav style={{ position: "relative", zIndex: 30, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 28px", borderBottom: `1px solid ${C.b0}`, flexShrink: 0, background: "oklch(0.10 0.014 248)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 18, fontWeight: 800, letterSpacing: "-0.04em", color: C.t1 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.jade, boxShadow: `0 0 10px ${C.jade}`, animation: "pdot 2.4s ease-in-out infinite" }} />
+          aria
+        </div>
+
+        <div style={{ display: "flex", gap: 3, background: C.s1, padding: 4, borderRadius: 999, border: `1px solid ${C.b0}` }}>
+          {TABS.map(({ id, label }) => {
+            const isActive = id !== "session" && activeTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  if (id === "session") navigate({ to: "/talk/$mode", params: { mode: "companion" } });
+                  else setActiveTab(id as Tab);
+                }}
+                style={{ padding: "6px 18px", borderRadius: 999, fontSize: 13, fontWeight: 500, color: isActive ? C.t1 : C.t3, cursor: "pointer", transition: "all 150ms", border: "none", background: isActive ? C.s3 : "transparent", boxShadow: isActive ? "0 1px 4px rgba(0,0,0,.4)" : "none", userSelect: "none" }}
+              >{label}</button>
+            );
+          })}
+        </div>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {stats && stats.totalSessions > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px 6px 10px", background: C.amberDim, border: `1px solid oklch(0.82 0.17 75 / 0.3)`, borderRadius: 999, fontSize: 13, fontWeight: 700, color: C.amber }}>
+              🔥 <span>{stats.totalSessions}</span>
+            </div>
+          )}
+          <Link
+            to="/settings"
+            style={{ width: 34, height: 34, borderRadius: "50%", background: `linear-gradient(135deg,${C.jadeDim},${C.jadeMid})`, border: `2px solid oklch(0.78 0.19 162 / 0.3)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, cursor: "pointer", textDecoration: "none" }}
+          >👤</Link>
+        </div>
+      </nav>
+
+      {/* ── Tab content ── */}
+      <div style={{ position: "relative", zIndex: 10, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        {activeTab === "home"     && <HomeTab user={user} stats={stats} sessions={sessions} needsKey={needsKey} />}
+        {activeTab === "practice" && <PracticeTab />}
+        {activeTab === "feedback" && <FeedbackTab />}
+      </div>
+
+      <style>{`
+        @keyframes efloat {
+          0%,100% { transform: translateY(0) rotate(-1deg); }
+          40%      { transform: translateY(-8px) rotate(1.5deg); }
+          70%      { transform: translateY(-3px) rotate(-0.5deg); }
+        }
+        @keyframes pdot {
+          0%,100% { box-shadow: 0 0 8px oklch(0.78 0.19 162); }
+          50%     { box-shadow: 0 0 20px oklch(0.78 0.19 162), 0 0 35px oklch(0.78 0.19 162 / 0.18); }
+        }
+      `}</style>
+    </div>
+  );
+}

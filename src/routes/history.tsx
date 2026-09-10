@@ -1,1 +1,136 @@
-aW1wb3J0IHsgY3JlYXRlRmlsZVJvdXRlLCBMaW5rIH0gZnJvbSAiQHRhbnN0YWNrL3JlYWN0LXJvdXRlciI7CmltcG9ydCB7IHVzZU11dGF0aW9uLCB1c2VRdWVyeSwgdXNlUXVlcnlDbGllbnQgfSBmcm9tICJAdGFuc3RhY2svcmVhY3QtcXVlcnkiOwppbXBvcnQgeyBUcmFzaDIgfSBmcm9tICJsdWNpZGUtcmVhY3QiOwppbXBvcnQgeyB0b2FzdCB9IGZyb20gInNvbm5lciI7CmltcG9ydCB7IHN1cGFiYXNlIH0gZnJvbSAiQC9pbnRlZ3JhdGlvbnMvc3VwYWJhc2UvY2xpZW50IjsKaW1wb3J0IHsgdXNlQXV0aCB9IGZyb20gIkAvaG9va3MvdXNlQXV0aCI7CmltcG9ydCB7IGdldE1vZGUsIHR5cGUgTW9kZVNsdWcgfSBmcm9tICJAL2xpYi9tb2RlcyI7CgpleHBvcnQgY29uc3QgUm91dGUgPSBjcmVhdGVGaWxlUm91dGUoIi9oaXN0b3J5IikoewogIGhlYWQ6ICgpID0+ICh7CiAgICBtZXRhOiBbCiAgICAgIHsgdGl0bGU6ICJQYXN0IGNvbnZlcnNhdGlvbnMg4oCUIEFyaWEiIH0sCiAgICAgIHsgbmFtZTogImRlc2NyaXB0aW9uIiwgY29udGVudDogIkxvb2sgYmFjayBhdCB5b3VyIHNhdmVkIGNvbnZlcnNhdGlvbnMuIiB9LAogICAgICB7IHByb3BlcnR5OiAib2c6dGl0bGUiLCBjb250ZW50OiAiUGFzdCBjb252ZXJzYXRpb25zIOKAlCBBcmlhIiB9LAogICAgICB7IHByb3BlcnR5OiAib2c6dHlwZSIsIGNvbnRlbnQ6ICJ3ZWJzaXRlIiB9LAogICAgICB7IG5hbWU6ICJ0d2l0dGVyOmNhcmQiLCBjb250ZW50OiAic3VtbWFyeV9sYXJnZV9pbWFnZSIgfSwKICAgIF0sCiAgfSksCiAgY29tcG9uZW50OiBIaXN0b3J5UGFnZSwKfSk7CgpmdW5jdGlvbiBIaXN0b3J5UGFnZSgpIHsKICBjb25zdCB7IHVzZXIsIGxvYWRpbmcgfSA9IHVzZUF1dGgoKTsKICBjb25zdCBxdWVyeUNsaWVudCA9IHVzZVF1ZXJ5Q2xpZW50KCk7CgogIGNvbnN0IHsgZGF0YTogc2Vzc2lvbnMsIGlzTG9hZGluZywgZXJyb3IgfSA9IHVzZVF1ZXJ5KHsKICAgIHF1ZXJ5S2V5OiBbInNlc3Npb25zIiwgdXNlcj8uaWRdLAogICAgZW5hYmxlZDogQm9vbGVhbih1c2VyKSwKICAgIHF1ZXJ5Rm46IGFzeW5jICgpID0+IHsKICAgICAgY29uc3QgeyBkYXRhLCBlcnJvcjogcXVlcnlFcnJvciB9ID0gYXdhaXQgc3VwYWJhc2UKICAgICAgICAuZnJvbSgic2Vzc2lvbnMiKQogICAgICAgIC5zZWxlY3QoImlkLCBtb2RlLCB0aXRsZSwgY3JlYXRlZF9hdCwgbWVzc2FnZXMoY291bnQpIikKICAgICAgICAub3JkZXIoImNyZWF0ZWRfYXQiLCB7IGFzY2VuZGluZzogZmFsc2UgfSk7CiAgICAgIGlmIChxdWVyeUVycm9yKSB0aHJvdyBxdWVyeUVycm9yOwogICAgICByZXR1cm4gZGF0YTsKICAgIH0sCiAgfSk7CgogIGNvbnN0IHJlbW92ZSA9IHVzZU11dGF0aW9uKHsKICAgIG11dGF0aW9uRm46IGFzeW5jIChpZDogc3RyaW5nKSA9PiB7CiAgICAgIGNvbnN0IHsgZXJyb3I6IGRlbGV0ZUVycm9yIH0gPSBhd2FpdCBzdXBhYmFzZS5mcm9tKCJzZXNzaW9ucyIpLmRlbGV0ZSgpLmVxKCJpZCIsIGlkKTsKICAgICAgaWYgKGRlbGV0ZUVycm9yKSB0aHJvdyBkZWxldGVFcnJvcjsKICAgIH0sCiAgICBvblN1Y2Nlc3M6ICgpID0+IHsKICAgICAgdG9hc3Quc3VjY2VzcygiQ29udmVyc2F0aW9uIHJlbW92ZWQiKTsKICAgICAgdm9pZCBxdWVyeUNsaWVudC5pbnZhbGlkYXRlUXVlcmllcyh7IHF1ZXJ5S2V5OiBbInNlc3Npb25zIiwgdXNlcj8uaWRdIH0pOwogICAgfSwKICAgIG9uRXJyb3I6IChlcnI6IEVycm9yKSA9PiB0b2FzdC5lcnJvcihlcnIubWVzc2FnZSksCiAgfSk7CgogIHJldHVybiAoCiAgICA8bWFpbiBjbGFzc05hbWU9Im14LWF1dG8gZmxleCBtaW4taC1zY3JlZW4gdy1mdWxsIG1heC13LXhsIGZsZXgtY29sIGp1c3RpZnktY2VudGVyIHB4LTYgcHktMTYiPgogICAgICA8ZGl2IGNsYXNzTmFtZT0iYW5pbWF0ZS1yaXNlIj4KICAgICAgICA8TGluayB0bz0iL2Rhc2hib2FyZCIgY2xhc3NOYW1lPSJtYi02IGlubGluZS1mbGV4IGl0ZW1zLWNlbnRlciBnYXAtMS41IHRleHQteHMgdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIGhvdmVyOnRleHQtZm9yZWdyb3VuZCB0cmFuc2l0aW9uLWNvbG9ycyI+CiAgICAgICAgICDihpAgSG9tZQogICAgICAgIDwvTGluaz4KICAgICAgICA8aDEgY2xhc3NOYW1lPSJ0ZXh0LTJ4bCBmb250LW1lZGl1bSB0cmFja2luZy10aWdodCI+UGFzdCBjb252ZXJzYXRpb25zPC9oMT4KCiAgICAgICAgeyF1c2VyICYmICFsb2FkaW5nID8gKAogICAgICAgICAgPHAgY2xhc3NOYW1lPSJtdC00IHRleHQtc20gdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIj4KICAgICAgICAgICAgQ29udmVyc2F0aW9ucyBhcmUgb25seSBrZXB0IHdoZW4geW91IGFyZSBzaWduZWQgaW4ueyIgIn0KICAgICAgICAgICAgPExpbmsgdG89Ii9hdXRoIiBjbGFzc05hbWU9InRleHQtcHJpbWFyeS85MCB1bmRlcmxpbmUtb2Zmc2V0LTQgaG92ZXI6dW5kZXJsaW5lIj5TaWduIGluPC9MaW5rPgogICAgICAgICAgPC9wPgogICAgICAgICkgOiBudWxsfQoKICAgICAgICB7dXNlciAmJiBpc0xvYWRpbmcgPyA8cCBjbGFzc05hbWU9Im10LTQgdGV4dC1zbSB0ZXh0LW11dGVkLWZvcmVncm91bmQiPkxvYWRpbmfigKY8L3A+IDogbnVsbH0KICAgICAgICB7ZXJyb3IgPyA8cCBjbGFzc05hbWU9Im10LTQgdGV4dC1zbSB0ZXh0LWRlc3RydWN0aXZlIj5Zb3VyIGNvbnZlcnNhdGlvbnMgY291bGQgbm90IGJlIGxvYWRlZCBqdXN0IG5vdy48L3A+IDogbnVsbH0KICAgICAgICB7dXNlciAmJiBzZXNzaW9ucz8ubGVuZ3RoID09PSAwID8gPHAgY2xhc3NOYW1lPSJtdC00IHRleHQtc20gdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIj5Ob3RoaW5nIGhlcmUgeWV0LjwvcD4gOiBudWxsfQoKICAgICAgICA8dWwgY2xhc3NOYW1lPSJtdC04IHNwYWNlLXktMyI+CiAgICAgICAgICB7KHNlc3Npb25zID8/IFtdKS5tYXAoKHNlc3Npb24pID0+IHsKICAgICAgICAgICAgY29uc3QgY291bnQgPSBzZXNzaW9uLm1lc3NhZ2VzPy5bMF0/LmNvdW50ID8/IDA7CiAgICAgICAgICAgIHJldHVybiAoCiAgICAgICAgICAgICAgPGxpIGtleT17c2Vzc2lvbi5pZH0gY2xhc3NOYW1lPSJyb3VuZGVkLTJ4bCBib3JkZXIgYm9yZGVyLWJvcmRlciBweC01IHB5LTQgaG92ZXI6Ym9yZGVyLXByaW1hcnkvMzAgdHJhbnNpdGlvbi1jb2xvcnMiPgogICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9ImZsZXggaXRlbXMtYmFzZWxpbmUganVzdGlmeS1iZXR3ZWVuIGdhcC00Ij4KICAgICAgICAgICAgICAgICAgPExpbmsgdG89Ii90YWxrLyRtb2RlIiBwYXJhbXM9e3sgbW9kZTogc2Vzc2lvbi5tb2RlIGFzIE1vZGVTbHVnIH19IHNlYXJjaD17eyBzZXNzaW9uOiBzZXNzaW9uLmlkIH19CiAgICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJ0ZXh0LXNtIGhvdmVyOnRleHQtcHJpbWFyeSB0cmFuc2l0aW9uLWNvbG9ycyI+CiAgICAgICAgICAgICAgICAgICAge3Nlc3Npb24udGl0bGV9CiAgICAgICAgICAgICAgICAgIDwvTGluaz4KICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJzaHJpbmstMCB0ZXh0LXhzIHRleHQtbXV0ZWQtZm9yZWdyb3VuZCI+e2dldE1vZGUoc2Vzc2lvbi5tb2RlKS5uYW1lfTwvc3Bhbj4KICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9Im10LTEgZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1iZXR3ZWVuIGdhcC00Ij4KICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJ0ZXh0LXhzIHRleHQtbXV0ZWQtZm9yZWdyb3VuZCI+CiAgICAgICAgICAgICAgICAgICAge25ldyBEYXRlKHNlc3Npb24uY3JlYXRlZF9hdCkudG9Mb2NhbGVTdHJpbmcoKX0gwrcge2NvdW50fSB7Y291bnQgPT09IDEgPyAibWVzc2FnZSIgOiAibWVzc2FnZXMifQogICAgICAgICAgICAgICAgICA8L3NwYW4+CiAgICAgICAgICAgICAgICAgIDxidXR0b24gdHlwZT0iYnV0dG9uIiBhcmlhLWxhYmVsPXtgRGVsZXRlICR7c2Vzc2lvbi50aXRsZX1gfSBvbkNsaWNrPXsoKSA9PiByZW1vdmUubXV0YXRlKHNlc3Npb24uaWQpfQogICAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT0idGV4dC1tdXRlZC1mb3JlZ3JvdW5kIGhvdmVyOnRleHQtZGVzdHJ1Y3RpdmUgdHJhbnNpdGlvbi1jb2xvcnMiPgogICAgICAgICAgICAgICAgICAgIDxUcmFzaDIgY2xhc3NOYW1lPSJoLTMuNSB3LTMuNSIgLz4KICAgICAgICAgICAgICAgICAgPC9idXR0b24+CiAgICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICApOwogICAgICAgICAgfSl9CiAgICAgICAgPC91bD4KICAgICAgPC9kaXY+CiAgICA8L21haW4+CiAgKTsKfQo=
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { getMode, type ModeSlug } from "@/lib/modes";
+
+export const Route = createFileRoute("/history")({
+  head: () => ({
+    meta: [
+      { title: "Past conversations — Aria" },
+      {
+        name: "description",
+        content: "Look back at your saved conversations, grouped by the mode you were practising.",
+      },
+      { property: "og:title", content: "Past conversations — Aria" },
+      { property: "og:description", content: "Your saved sessions, per mode." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: HistoryPage,
+});
+
+function HistoryPage() {
+  const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
+
+  const {
+    data: sessions,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["sessions", user?.id],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const { data, error: queryError } = await supabase
+        .from("sessions")
+        .select("id, mode, title, created_at, messages(count)")
+        .order("created_at", { ascending: false });
+      if (queryError) throw queryError;
+      return data;
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: deleteError } = await supabase.from("sessions").delete().eq("id", id);
+      if (deleteError) throw deleteError;
+    },
+    onSuccess: () => {
+      toast.success("Conversation removed");
+      void queryClient.invalidateQueries({ queryKey: ["sessions", user?.id] });
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-6 py-16">
+      <div className="animate-rise">
+        <h1 className="text-2xl font-medium tracking-tight">Past conversations</h1>
+
+        {!user && !loading ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Conversations are only kept when you are signed in.{" "}
+            <Link to="/auth" className="text-primary/90 underline-offset-4 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        ) : null}
+
+        {user && isLoading ? (
+          <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
+        ) : null}
+
+        {error ? (
+          <p className="mt-4 text-sm text-destructive">
+            Your conversations could not be loaded just now.
+          </p>
+        ) : null}
+
+        {user && sessions?.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">Nothing here yet.</p>
+        ) : null}
+
+        <ul className="mt-8 space-y-3">
+          {(sessions ?? []).map((session) => {
+            const count = session.messages?.[0]?.count ?? 0;
+            return (
+              <li
+                key={session.id}
+                className="rounded-2xl border border-border px-5 py-4 transition-colors duration-500 hover:border-primary/40"
+              >
+                <div className="flex items-baseline justify-between gap-4">
+                  <Link
+                    to="/talk/$mode"
+                    params={{ mode: session.mode as ModeSlug }}
+                    search={{ session: session.id }}
+                    className="text-sm transition-colors duration-300 hover:text-primary"
+                  >
+                    {session.title}
+                  </Link>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {getMode(session.mode).name}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-4">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(session.created_at).toLocaleString()} · {count}{" "}
+                    {count === 1 ? "message" : "messages"}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${session.title}`}
+                    onClick={() => remove.mutate(session.id)}
+                    className="text-muted-foreground transition-colors duration-300 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <Link
+          to="/modes"
+          className="mt-10 inline-block text-xs text-muted-foreground transition-colors duration-300 hover:text-foreground"
+        >
+          Back to modes
+        </Link>
+      </div>
+    </main>
+  );
+}

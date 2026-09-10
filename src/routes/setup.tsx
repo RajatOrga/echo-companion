@@ -1,1 +1,385 @@
-aW1wb3J0IHsgY3JlYXRlRmlsZVJvdXRlLCBMaW5rLCB1c2VOYXZpZ2F0ZSB9IGZyb20gIkB0YW5zdGFjay9yZWFjdC1yb3V0ZXIiOwppbXBvcnQgeyB1c2VTZXJ2ZXJGbiB9IGZyb20gIkB0YW5zdGFjay9yZWFjdC1zdGFydCI7CmltcG9ydCB7IHVzZUVmZmVjdCwgdXNlU3RhdGUgfSBmcm9tICJyZWFjdCI7CmltcG9ydCB7IENoZWNrLCBEb3dubG9hZCwgTG9hZGVyMiwgU2hpZWxkQ2hlY2ssIFNwYXJrbGVzIH0gZnJvbSAibHVjaWRlLXJlYWN0IjsKaW1wb3J0IHsgdG9hc3QgfSBmcm9tICJzb25uZXIiOwppbXBvcnQgeyBnZXRLb2tvcm9TdGF0dXMsIGluc3RhbGxLb2tvcm8sIHRlc3RDb25uZWN0aW9uIH0gZnJvbSAiQC9saWIvYWkuZnVuY3Rpb25zIjsKaW1wb3J0IHsKICBERUZBVUxUX01PREVMUywKICBFREdFX1ZPSUNFUywKICBFTEVWRU5MQUJTX1ZPSUNFUywKICBLT0tPUk9fVk9JQ0VTLAogIE9QRU5BSV9WT0lDRVMsCiAgbG9hZFNldHRpbmdzLAogIHNhdmVTZXR0aW5ncywKICB0eXBlIEtleVNldHRpbmdzLAogIHR5cGUgTGxtUHJvdmlkZXIsCn0gZnJvbSAiQC9saWIva2V5cyI7CgpleHBvcnQgY29uc3QgUm91dGUgPSBjcmVhdGVGaWxlUm91dGUoIi9zZXR1cCIpKHsKICBoZWFkOiAoKSA9PiAoewogICAgbWV0YTogWwogICAgICB7IHRpdGxlOiAiQ29ubmVjdCB5b3VyIEFJIGtleSBcdTIwMTQgQXJpYSIgfSwKICAgICAgeyBuYW1lOiAiZGVzY3JpcHRpb24iLCBjb250ZW50OiAiQWRkIHlvdXIgb3duIEFJIGtleSBhbmQgb3B0aW9uYWwgdm9pY2Uga2V5LiBLZXlzIHN0YXkgaW4gdGhpcyBicm93c2VyIGFuZCBhcmUgc2VudCBvbmx5IHRvIHRoZSBwcm92aWRlciB5b3UgY2hvb3NlLiIgfSwKICAgICAgeyBwcm9wZXJ0eTogIm9nOnRpdGxlIiwgY29udGVudDogIkNvbm5lY3QgeW91ciBBSSBrZXkgXHUyMDE0IEFyaWEiIH0sCiAgICAgIHsgcHJvcGVydHk6ICJvZzp0eXBlIiwgY29udGVudDogIndlYnNpdGUiIH0sCiAgICAgIHsgbmFtZTogInR3aXR0ZXI6Y2FyZCIsIGNvbnRlbnQ6ICJzdW1tYXJ5X2xhcmdlX2ltYWdlIiB9LAogICAgXSwKICB9KSwKICBjb21wb25lbnQ6IFNldHVwUGFnZSwKfSk7Cgpjb25zdCBQUk9WSURFUlM6IHsgdmFsdWU6IExsbVByb3ZpZGVyOyBsYWJlbDogc3RyaW5nIH1bXSA9IFsKICB7IHZhbHVlOiAib3BlbmFpIiwgbGFiZWw6ICJPcGVuQUkiIH0sCiAgeyB2YWx1ZTogImFudGhyb3BpYyIsIGxhYmVsOiAiQW50aHJvcGljIiB9LAogIHsgdmFsdWU6ICJnZW1pbmkiLCBsYWJlbDogIkdvb2dsZSBHZW1pbmkiIH0sCiAgeyB2YWx1ZTogImN1c3RvbSIsIGxhYmVsOiAiQ3VzdG9tIGVuZHBvaW50IiB9LApdOwoKZnVuY3Rpb24gU2V0dXBQYWdlKCkgewogIGNvbnN0IG5hdmlnYXRlID0gdXNlTmF2aWdhdGUoKTsKICBjb25zdCBydW5UZXN0ID0gdXNlU2VydmVyRm4odGVzdENvbm5lY3Rpb24pOwogIGNvbnN0IHJ1bkluc3RhbGxLb2tvcm8gPSB1c2VTZXJ2ZXJGbihpbnN0YWxsS29rb3JvKTsKICBjb25zdCBjaGVja0tva29ybyA9IHVzZVNlcnZlckZuKGdldEtva29yb1N0YXR1cyk7CgogIGNvbnN0IFtzZXR0aW5ncywgc2V0U2V0dGluZ3NdID0gdXNlU3RhdGU8S2V5U2V0dGluZ3MgfCBudWxsPihudWxsKTsKICBjb25zdCBbdGVzdGluZywgc2V0VGVzdGluZ10gPSB1c2VTdGF0ZShmYWxzZSk7CiAgY29uc3QgW3Rlc3RlZCwgc2V0VGVzdGVkXSA9IHVzZVN0YXRlKGZhbHNlKTsKICBjb25zdCBba29rb3JvSW5zdGFsbGluZywgc2V0S29rb3JvSW5zdGFsbGluZ10gPSB1c2VTdGF0ZShmYWxzZSk7CiAgY29uc3QgW2tva29yb1JlYWR5LCBzZXRLb2tvcm9SZWFkeV0gPSB1c2VTdGF0ZShmYWxzZSk7CgogIHVzZUVmZmVjdCgoKSA9PiB7CiAgICBzZXRTZXR0aW5ncyhsb2FkU2V0dGluZ3MoKSk7CiAgICB2b2lkIChhc3luYyAoKSA9PiB7CiAgICAgIHRyeSB7CiAgICAgICAgY29uc3QgeyBpbnN0YWxsZWQgfSA9IGF3YWl0IGNoZWNrS29rb3JvKCk7CiAgICAgICAgc2V0S29rb3JvUmVhZHkoaW5zdGFsbGVkKTsKICAgICAgfSBjYXRjaCB7IC8qIGNoZWNrIGZhaWxlZCAqLyB9CiAgICB9KSgpOwogIH0sIFtjaGVja0tva29yb10pOwoKICBpZiAoIXNldHRpbmdzKSByZXR1cm4gPG1haW4gY2xhc3NOYW1lPSJtaW4taC1zY3JlZW4iIC8+OwoKICBjb25zdCB1cGRhdGUgPSAocGF0Y2g6IFBhcnRpYWw8S2V5U2V0dGluZ3M+KSA9PiB7CiAgICBzZXRUZXN0ZWQoZmFsc2UpOwogICAgc2V0U2V0dGluZ3MoKHByZXYpID0+IChwcmV2ID8geyAuLi5wcmV2LCAuLi5wYXRjaCB9IDogcHJldikpOwogIH07CgogIGNvbnN0IGhhbmRsZUluc3RhbGxLb2tvcm8gPSBhc3luYyAoKSA9PiB7CiAgICBzZXRLb2tvcm9JbnN0YWxsaW5nKHRydWUpOwogICAgdHJ5IHsKICAgICAgY29uc3QgcmVzID0gYXdhaXQgcnVuSW5zdGFsbEtva29ybygpOwogICAgICBzZXRLb2tvcm9SZWFkeSh0cnVlKTsKICAgICAgdG9hc3Quc3VjY2VzcyhyZXMubWVzc2FnZSk7CiAgICB9IGNhdGNoIChlKSB7CiAgICAgIHRvYXN0LmVycm9yKGUgaW5zdGFuY2VvZiBFcnJvciA/IGUubWVzc2FnZSA6ICJGYWlsZWQgdG8gZG93bmxvYWQgS29rb3JvIG1vZGVsIik7CiAgICB9IGZpbmFsbHkgewogICAgICBzZXRLb2tvcm9JbnN0YWxsaW5nKGZhbHNlKTsKICAgIH0KICB9OwoKICBjb25zdCBoYW5kbGVUZXN0ID0gYXN5bmMgKCkgPT4gewogICAgaWYgKCFzZXR0aW5ncy5hcGlLZXkudHJpbSgpICYmIHNldHRpbmdzLnByb3ZpZGVyICE9PSAiY3VzdG9tIikgewogICAgICB0b2FzdC5lcnJvcigiQWRkIHlvdXIga2V5IGZpcnN0Iik7IHJldHVybjsKICAgIH0KICAgIHNldFRlc3RpbmcodHJ1ZSk7CiAgICB0cnkgewogICAgICBjb25zdCByZXN1bHQgPSBhd2FpdCBydW5UZXN0KHsgZGF0YTogeyBwcm92aWRlcjogc2V0dGluZ3MucHJvdmlkZXIsIGFwaUtleTogc2V0dGluZ3MuYXBpS2V5IHx8ICJub25lIiwgbW9kZWw6IHNldHRpbmdzLm1vZGVsLCBiYXNlVXJsOiBzZXR0aW5ncy5iYXNlVXJsIHx8IHVuZGVmaW5lZCB9IH0pOwogICAgICBzZXRUZXN0ZWQodHJ1ZSk7CiAgICAgIHRvYXN0LnN1Y2Nlc3MocmVzdWx0LnNhbXBsZSB8fCAiQ29ubmVjdGlvbiB3b3JrcyIpOwogICAgfSBjYXRjaCAoZXJyb3IpIHsKICAgICAgdG9hc3QuZXJyb3IoZXJyb3IgaW5zdGFuY2VvZiBFcnJvciA/IGVycm9yLm1lc3NhZ2UgOiAiQ291bGQgbm90IHJlYWNoIHRoZSBwcm92aWRlciIpOwogICAgfSBmaW5hbGx5IHsKICAgICAgc2V0VGVzdGluZyhmYWxzZSk7CiAgICB9CiAgfTsKCiAgY29uc3QgaGFuZGxlU2F2ZSA9ICgpID0+IHsKICAgIHNhdmVTZXR0aW5ncyhzZXR0aW5ncyk7CiAgICB0b2FzdC5zdWNjZXNzKCJTYXZlZCBvbiB0aGlzIGRldmljZSIpOwogICAgbmF2aWdhdGUoeyB0bzogIi9kYXNoYm9hcmQiIH0pOwogIH07CgogIHJldHVybiAoCiAgICA8bWFpbiBjbGFzc05hbWU9Im14LWF1dG8gZmxleCBtaW4taC1zY3JlZW4gdy1mdWxsIG1heC13LWxnIGZsZXgtY29sIGp1c3RpZnktY2VudGVyIHB4LTYgcHktMTYiPgogICAgICA8ZGl2IGNsYXNzTmFtZT0iYW5pbWF0ZS1yaXNlIj4KICAgICAgICA8aDEgY2xhc3NOYW1lPSJ0ZXh0LTJ4bCBmb250LW1lZGl1bSB0cmFja2luZy10aWdodCI+Q29ubmVjdCB5b3VyIEFJPC9oMT4KICAgICAgICA8cCBjbGFzc05hbWU9Im10LTMgZmxleCBpdGVtcy1zdGFydCBnYXAtMiB0ZXh0LXNtIGxlYWRpbmctcmVsYXhlZCB0ZXh0LW11dGVkLWZvcmVncm91bmQiPgogICAgICAgICAgPFNoaWVsZENoZWNrIGNsYXNzTmFtZT0ibXQtMC41IGgtNCB3LTQgc2hyaW5rLTAgdGV4dC1wcmltYXJ5IiAvPgogICAgICAgICAgWW91ciBrZXkgaXMgc3RvcmVkIGluIHRoaXMgYnJvd3NlciBvbmx5LiBJdCBpcyBuZXZlciBzYXZlZCB0byBhbnkgYWNjb3VudCBvciBkYXRhYmFzZSwKICAgICAgICAgIGFuZCBpdCBpcyBwYXNzZWQgc3RyYWlnaHQgdGhyb3VnaCB0byB0aGUgcHJvdmlkZXIgeW91IHBpY2suCiAgICAgICAgPC9wPgoKICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ibXQtMTAgc3BhY2UteS03Ij4KICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJzcGFjZS15LTIiPgogICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPSJ0ZXh0LXhzIHVwcGVyY2FzZSB0cmFja2luZy13aWRlciB0ZXh0LW11dGVkLWZvcmVncm91bmQiPlByb3ZpZGVyPC9sYWJlbD4KICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9ImZsZXggZmxleC13cmFwIGdhcC0yIj4KICAgICAgICAgICAgICB7UFJPVklERVJTLm1hcCgocHJvdmlkZXIpID0+ICgKICAgICAgICAgICAgICAgIDxidXR0b24ga2V5PXtwcm92aWRlci52YWx1ZX0gdHlwZT0iYnV0dG9uIgogICAgICAgICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiB1cGRhdGUoeyBwcm92aWRlcjogcHJvdmlkZXIudmFsdWUsIG1vZGVsOiBERUZBVUxUX01PREVMU1twcm92aWRlci52YWx1ZV0gfHwgc2V0dGluZ3MubW9kZWwgfSl9CiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT17YHJvdW5kZWQtZnVsbCBib3JkZXIgcHgtNCBweS0yIHRleHQtc20gdHJhbnNpdGlvbi1hbGwgZHVyYXRpb24tNDAwICR7CiAgICAgICAgICAgICAgICAgICAgc2V0dGluZ3MucHJvdmlkZXIgPT09IHByb3ZpZGVyLnZhbHVlCiAgICAgICAgICAgICAgICAgICAgICA/ICJib3JkZXItcHJpbWFyeS82MCBiZy1wcmltYXJ5LzEwIHRleHQtZm9yZWdyb3VuZCIKICAgICAgICAgICAgICAgICAgICAgIDogImJvcmRlci1ib3JkZXIgdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIGhvdmVyOnRleHQtZm9yZWdyb3VuZCIKICAgICAgICAgICAgICAgICAgfWB9PgogICAgICAgICAgICAgICAgICB7cHJvdmlkZXIubGFiZWx9CiAgICAgICAgICAgICAgICA8L2J1dHRvbj4KICAgICAgICAgICAgICApKX0KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICA8L2Rpdj4KCiAgICAgICAgICA8RmllbGQgbGFiZWw9IkFQSSBrZXkiPgogICAgICAgICAgICA8aW5wdXQgdHlwZT0icGFzc3dvcmQiIHZhbHVlPXtzZXR0aW5ncy5hcGlLZXl9IG9uQ2hhbmdlPXsoZSkgPT4gdXBkYXRlKHsgYXBpS2V5OiBlLnRhcmdldC52YWx1ZSB9KX0KICAgICAgICAgICAgICBwbGFjZWhvbGRlcj0ic2stLi4uIiBhdXRvQ29tcGxldGU9Im9mZiIKICAgICAgICAgICAgICBjbGFzc05hbWU9InctZnVsbCByb3VuZGVkLXhsIGJvcmRlciBib3JkZXItaW5wdXQgYmctY2FyZC82MCBweC00IHB5LTMgdGV4dC1zbSBvdXRsaW5lLW5vbmUgdHJhbnNpdGlvbi1jb2xvcnMgZHVyYXRpb24tMzAwIGZvY3VzOmJvcmRlci1wcmltYXJ5LzYwIiAvPgogICAgICAgICAgPC9GaWVsZD4KCiAgICAgICAgICA8RmllbGQgbGFiZWw9Ik1vZGVsIj4KICAgICAgICAgICAgPGlucHV0IHZhbHVlPXtzZXR0aW5ncy5tb2RlbH0gb25DaGFuZ2U9eyhlKSA9PiB1cGRhdGUoeyBtb2RlbDogZS50YXJnZXQudmFsdWUgfSl9CiAgICAgICAgICAgICAgcGxhY2Vob2xkZXI9ImdwdC00by1taW5pIgogICAgICAgICAgICAgIGNsYXNzTmFtZT0idy1mdWxsIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci1pbnB1dCBiZy1jYXJkLzYwIHB4LTQgcHktMyB0ZXh0LXNtIG91dGxpbmUtbm9uZSB0cmFuc2l0aW9uLWNvbG9ycyBkdXJhdGlvbi0zMDAgZm9jdXM6Ym9yZGVyLXByaW1hcnkvNjAiIC8+CiAgICAgICAgICA8L0ZpZWxkPgoKICAgICAgICAgIHtzZXR0aW5ncy5wcm92aWRlciA9PT0gImN1c3RvbSIgPyAoCiAgICAgICAgICAgIDxGaWVsZCBsYWJlbD0iRW5kcG9pbnQgYWRkcmVzcyI+CiAgICAgICAgICAgICAgPGlucHV0IHZhbHVlPXtzZXR0aW5ncy5iYXNlVXJsfSBvbkNoYW5nZT17KGUpID0+IHVwZGF0ZSh7IGJhc2VVcmw6IGUudGFyZ2V0LnZhbHVlIH0pfQogICAgICAgICAgICAgICAgcGxhY2Vob2xkZXI9Imh0dHBzOi8veW91ci1lbmRwb2ludC92MSIKICAgICAgICAgICAgICAgIGNsYXNzTmFtZT0idy1mdWxsIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci1pbnB1dCBiZy1jYXJkLzYwIHB4LTQgcHktMyB0ZXh0LXNtIG91dGxpbmUtbm9uZSB0cmFuc2l0aW9uLWNvbG9ycyBkdXJhdGlvbi0zMDAgZm9jdXM6Ym9yZGVyLXByaW1hcnkvNjAiIC8+CiAgICAgICAgICAgIDwvRmllbGQ+CiAgICAgICAgICApIDogbnVsbH0KCiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ic3BhY2UteS0yIj4KICAgICAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT0idGV4dC14cyB1cHBlcmNhc2UgdHJhY2tpbmctd2lkZXIgdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIj5Wb2ljZSBQcm92aWRlcjwvbGFiZWw+CiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJmbGV4IGZsZXgtd3JhcCBnYXAtMiI+CiAgICAgICAgICAgICAgeyhbCiAgICAgICAgICAgICAgICB7IGlkOiAia29rb3JvIiwgbGFiZWw6ICJLb2tvcm8tODJNIChMb2NhbCBOZXVyYWwsIH44ME1CKSIgfSwKICAgICAgICAgICAgICAgIHsgaWQ6ICJlZGdlIiwgbGFiZWw6ICJFZGdlIE5ldXJhbCAoRnJlZSBDbG91ZCkiIH0sCiAgICAgICAgICAgICAgICB7IGlkOiAiZWxldmVubGFicyIsIGxhYmVsOiAiRWxldmVuTGFicyAoQWN0b3IgR3JhZGUpIiB9LAogICAgICAgICAgICAgICAgeyBpZDogIm9wZW5haSIsIGxhYmVsOiAiT3BlbkFJIFZvaWNlIiB9LAogICAgICAgICAgICAgICAgeyBpZDogIm5vbmUiLCBsYWJlbDogIkJyb3dzZXIgVm9pY2UiIH0sCiAgICAgICAgICAgICAgXSBhcyBjb25zdCkubWFwKChvcHRpb24pID0+ICgKICAgICAgICAgICAgICAgIDxidXR0b24ga2V5PXtvcHRpb24uaWR9IHR5cGU9ImJ1dHRvbiIgb25DbGljaz17KCkgPT4gdXBkYXRlKHsgdHRzUHJvdmlkZXI6IG9wdGlvbi5pZCB9KX0KICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPXtgcm91bmRlZC1mdWxsIGJvcmRlciBweC00IHB5LTIgdGV4dC1zbSB0cmFuc2l0aW9uLWFsbCBkdXJhdGlvbi00MDAgJHsKICAgICAgICAgICAgICAgICAgICBzZXR0aW5ncy50dHNQcm92aWRlciA9PT0gb3B0aW9uLmlkCiAgICAgICAgICAgICAgICAgICAgICA/ICJib3JkZXItcHJpbWFyeS82MCBiZy1wcmltYXJ5LzEwIHRleHQtZm9yZWdyb3VuZCIKICAgICAgICAgICAgICAgICAgICAgIDogImJvcmRlci1ib3JkZXIgdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIGhvdmVyOnRleHQtZm9yZWdyb3VuZCIKICAgICAgICAgICAgICAgICAgfWB9PgogICAgICAgICAgICAgICAgICB7b3B0aW9uLmxhYmVsfQogICAgICAgICAgICAgICAgPC9idXR0b24+CiAgICAgICAgICAgICAgKSl9CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgPC9kaXY+CgogICAgICAgICAge3NldHRpbmdzLnR0c1Byb3ZpZGVyID09PSAia29rb3JvIiA/ICgKICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9InNwYWNlLXktMyByb3VuZGVkLTJ4bCBib3JkZXIgYm9yZGVyLXByaW1hcnkvMjUgYmctY2FyZC82MCBwLTQiPgogICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJmbGV4IGl0ZW1zLXN0YXJ0IGp1c3RpZnktYmV0d2VlbiBnYXAtMyI+CiAgICAgICAgICAgICAgICA8ZGl2PgogICAgICAgICAgICAgICAgICA8aDMgY2xhc3NOYW1lPSJmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMS41IHRleHQtc20gZm9udC1tZWRpdW0iPgogICAgICAgICAgICAgICAgICAgIDxTcGFya2xlcyBjbGFzc05hbWU9ImgtNCB3LTQgdGV4dC1wcmltYXJ5IiAvPiBLb2tvcm8tODJNIExvY2FsIE5ldXJhbCBUVFMKICAgICAgICAgICAgICAgICAgPC9oMz4KICAgICAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJtdC0wLjUgdGV4dC14cyB0ZXh0LW11dGVkLWZvcmVncm91bmQiPlN0YXRlLW9mLXRoZS1hcnQgODJNIG1vZGVsIHJ1bm5pbmcgMTAwJSBsb2NhbGx5LjwvcD4KICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAge2tva29yb1JlYWR5ID8gKAogICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9ImZsZXggaXRlbXMtY2VudGVyIGdhcC0xIHJvdW5kZWQtZnVsbCBib3JkZXIgYm9yZGVyLWVtZXJhbGQtNTAwLzMwIGJnLWVtZXJhbGQtNTAwLzE1IHB4LTIuNSBweS0xIHRleHQtWzExcHhdIGZvbnQtbWVkaXVtIHRleHQtZW1lcmFsZC01MDAiPgogICAgICAgICAgICAgICAgICAgIDxDaGVjayBjbGFzc05hbWU9ImgtMyB3LTMiIC8+IFJlYWR5CiAgICAgICAgICAgICAgICAgIDwvc3Bhbj4KICAgICAgICAgICAgICAgICkgOiAoCiAgICAgICAgICAgICAgICAgIDxidXR0b24gdHlwZT0iYnV0dG9uIiBvbkNsaWNrPXtoYW5kbGVJbnN0YWxsS29rb3JvfSBkaXNhYmxlZD17a29rb3JvSW5zdGFsbGluZ30KICAgICAgICAgICAgICAgICAgICBjbGFzc05hbWU9ImZsZXggc2hyaW5rLTAgaXRlbXMtY2VudGVyIGdhcC0xLjUgcm91bmRlZC1mdWxsIGJnLXByaW1hcnkgcHgtMyBweS0xLjUgdGV4dC14cyBmb250LW1lZGl1bSB0ZXh0LXByaW1hcnktZm9yZWdyb3VuZCBkaXNhYmxlZDpvcGFjaXR5LTUwIj4KICAgICAgICAgICAgICAgICAgICB7a29rb3JvSW5zdGFsbGluZyA/IDxMb2FkZXIyIGNsYXNzTmFtZT0iaC0zLjUgdy0zLjUgYW5pbWF0ZS1zcGluIiAvPiA6IDxEb3dubG9hZCBjbGFzc05hbWU9ImgtMy41IHctMy41IiAvPn0KICAgICAgICAgICAgICAgICAgICB7a29rb3JvSW5zdGFsbGluZyA/ICJEb3dubG9hZGluZy4uLiIgOiAiRG93bmxvYWQgKH44ME1CKSJ9CiAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgICAgICAgICAgKX0KICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgICA8c2VsZWN0IHZhbHVlPXtzZXR0aW5ncy52b2ljZSB8fCAiYXV0byJ9IG9uQ2hhbmdlPXsoZSkgPT4gdXBkYXRlKHsgdm9pY2U6IGUudGFyZ2V0LnZhbHVlIH0pfQogICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJ3LWZ1bGwgcm91bmRlZC14bCBib3JkZXIgYm9yZGVyLWlucHV0IGJnLWNhcmQgcHgtNCBweS0yLjUgdGV4dC1zbSBvdXRsaW5lLW5vbmUgZm9jdXM6Ym9yZGVyLXByaW1hcnkvNjAiPgogICAgICAgICAgICAgICAge0tPS09ST19WT0lDRVMubWFwKCh2KSA9PiA8b3B0aW9uIGtleT17di5pZH0gdmFsdWU9e3YuaWR9Pnt2Lm5hbWV9IC0ge3YuZGVzY3JpcHRpb259PC9vcHRpb24+KX0KICAgICAgICAgICAgICA8L3NlbGVjdD4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICApIDogc2V0dGluZ3MudHRzUHJvdmlkZXIgPT09ICJlZGdlIiA/ICgKICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9InNwYWNlLXktMiI+CiAgICAgICAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT0idGV4dC14cyB1cHBlcmNhc2UgdHJhY2tpbmctd2lkZXIgdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIj5OZXVyYWwgVm9pY2UgUHJlc2V0PC9sYWJlbD4KICAgICAgICAgICAgICA8c2VsZWN0IHZhbHVlPXtzZXR0aW5ncy52b2ljZSB8fCAiYXV0byJ9IG9uQ2hhbmdlPXsoZSkgPT4gdXBkYXRlKHsgdm9pY2U6IGUudGFyZ2V0LnZhbHVlIH0pfQogICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJ3LWZ1bGwgcm91bmRlZC14bCBib3JkZXIgYm9yZGVyLWlucHV0IGJnLWNhcmQgcHgtNCBweS0zIHRleHQtc20gb3V0bGluZS1ub25lIGZvY3VzOmJvcmRlci1wcmltYXJ5LzYwIj4KICAgICAgICAgICAgICAgIHtFREdFX1ZPSUNFUy5tYXAoKHYpID0+IDxvcHRpb24ga2V5PXt2LmlkfSB2YWx1ZT17di5pZH0+e3YubmFtZX0gLSB7di5kZXNjcmlwdGlvbn08L29wdGlvbj4pfQogICAgICAgICAgICAgIDwvc2VsZWN0PgogICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0idGV4dC14cyB0ZXh0LXByaW1hcnkvODAiPkZyZWUgTWljcm9zb2Z0IE5ldXJhbCBUVFMuIE5vIEFQSSBrZXkgcmVxdWlyZWQuPC9wPgogICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICkgOiBzZXR0aW5ncy50dHNQcm92aWRlciA9PT0gImVsZXZlbmxhYnMiIHx8IHNldHRpbmdzLnR0c1Byb3ZpZGVyID09PSAib3BlbmFpIiA/ICgKICAgICAgICAgICAgPD4KICAgICAgICAgICAgICA8RmllbGQgbGFiZWw9IlZvaWNlIGtleSI+CiAgICAgICAgICAgICAgICA8aW5wdXQgdHlwZT0icGFzc3dvcmQiIHZhbHVlPXtzZXR0aW5ncy50dHNLZXl9IG9uQ2hhbmdlPXsoZSkgPT4gdXBkYXRlKHsgdHRzS2V5OiBlLnRhcmdldC52YWx1ZSB9KX0KICAgICAgICAgICAgICAgICAgYXV0b0NvbXBsZXRlPSJvZmYiIHBsYWNlaG9sZGVyPXtzZXR0aW5ncy50dHNQcm92aWRlciA9PT0gImVsZXZlbmxhYnMiID8gInhpLWFwaS1rZXkuLi4iIDogInNrLS4uLiJ9CiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT0idy1mdWxsIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci1pbnB1dCBiZy1jYXJkLzYwIHB4LTQgcHktMyB0ZXh0LXNtIG91dGxpbmUtbm9uZSBmb2N1czpib3JkZXItcHJpbWFyeS82MCIgLz4KICAgICAgICAgICAgICA8L0ZpZWxkPgogICAgICAgICAgICAgIDxzZWxlY3QgdmFsdWU9e3NldHRpbmdzLnZvaWNlIHx8ICJhdXRvIn0gb25DaGFuZ2U9eyhlKSA9PiB1cGRhdGUoeyB2b2ljZTogZS50YXJnZXQudmFsdWUgfSl9CiAgICAgICAgICAgICAgICBjbGFzc05hbWU9InctZnVsbCByb3VuZGVkLXhsIGJvcmRlciBib3JkZXItaW5wdXQgYmctY2FyZCBweC00IHB5LTMgdGV4dC1zbSBvdXRsaW5lLW5vbmUgZm9jdXM6Ym9yZGVyLXByaW1hcnkvNjAiPgogICAgICAgICAgICAgICAgeyhzZXR0aW5ncy50dHNQcm92aWRlciA9PT0gImVsZXZlbmxhYnMiID8gRUxFVkVOTEFCU19WT0lDRVMgOiBPUEVOQUlfVk9JQ0VTKS5tYXAoKHYpID0+CiAgICAgICAgICAgICAgICAgIDxvcHRpb24ga2V5PXt2LmlkfSB2YWx1ZT17di5pZH0+e3YubmFtZX0gLSB7di5kZXNjcmlwdGlvbn08L29wdGlvbj4pfQogICAgICAgICAgICAgIDwvc2VsZWN0PgogICAgICAgICAgICA8Lz4KICAgICAgICAgICkgOiBudWxsfQogICAgICAgIDwvZGl2PgoKICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ibXQtMTAgZmxleCBmbGV4LXdyYXAgaXRlbXMtY2VudGVyIGdhcC0zIj4KICAgICAgICAgIDxidXR0b24gdHlwZT0iYnV0dG9uIiBvbkNsaWNrPXtoYW5kbGVUZXN0fSBkaXNhYmxlZD17dGVzdGluZ30KICAgICAgICAgICAgY2xhc3NOYW1lPSJmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiByb3VuZGVkLWZ1bGwgYm9yZGVyIGJvcmRlci1ib3JkZXIgcHgtNSBweS0yLjUgdGV4dC1zbSB0ZXh0LW11dGVkLWZvcmVncm91bmQgaG92ZXI6dGV4dC1mb3JlZ3JvdW5kIGRpc2FibGVkOm9wYWNpdHktNTAiPgogICAgICAgICAgICB7dGVzdGluZyA/IDxMb2FkZXIyIGNsYXNzTmFtZT0iaC00IHctNCBhbmltYXRlLXNwaW4iIC8+IDogdGVzdGVkID8gPENoZWNrIGNsYXNzTmFtZT0iaC00IHctNCB0ZXh0LXByaW1hcnkiIC8+IDogbnVsbH0KICAgICAgICAgICAgVGVzdCBjb25uZWN0aW9uCiAgICAgICAgICA8L2J1dHRvbj4KICAgICAgICAgIDxidXR0b24gdHlwZT0iYnV0dG9uIiBvbkNsaWNrPXtoYW5kbGVTYXZlfQogICAgICAgICAgICBjbGFzc05hbWU9InJvdW5kZWQtZnVsbCBiZy1wcmltYXJ5IHB4LTYgcHktMi41IHRleHQtc20gZm9udC1tZWRpdW0gdGV4dC1wcmltYXJ5LWZvcmVncm91bmQgaG92ZXI6c2NhbGUtWzEuMDJdIHRyYW5zaXRpb24tdHJhbnNmb3JtIGR1cmF0aW9uLTUwMCI+CiAgICAgICAgICAgIFNhdmUgYW5kIGNvbnRpbnVlCiAgICAgICAgICA8L2J1dHRvbj4KICAgICAgICA8L2Rpdj4KCiAgICAgICAgPHAgY2xhc3NOYW1lPSJtdC04IHRleHQteHMgdGV4dC1tdXRlZC1mb3JlZ3JvdW5kIj4KICAgICAgICAgIFdhbnQgY29udmVyc2F0aW9ucyBrZXB0IGJldHdlZW4gZGV2aWNlcz97IiAifQogICAgICAgICAgPExpbmsgdG89Ii9hdXRoIiBjbGFzc05hbWU9InRleHQtcHJpbWFyeS85MCB1bmRlcmxpbmUtb2Zmc2V0LTQgaG92ZXI6dW5kZXJsaW5lIj5DcmVhdGUgYW4gYWNjb3VudDwvTGluaz4uIEl0IGlzIG9wdGlvbmFsLgogICAgICAgIDwvcD4KICAgICAgPC9kaXY+CiAgICA8L21haW4+CiAgKTsKfQoKZnVuY3Rpb24gRmllbGQoeyBsYWJlbCwgY2hpbGRyZW4gfTogeyBsYWJlbDogc3RyaW5nOyBjaGlsZHJlbjogUmVhY3QuUmVhY3ROb2RlIH0pIHsKICByZXR1cm4gKAogICAgPGRpdiBjbGFzc05hbWU9InNwYWNlLXktMiI+CiAgICAgIDxsYWJlbCBjbGFzc05hbWU9InRleHQteHMgdXBwZXJjYXNlIHRyYWNraW5nLXdpZGVyIHRleHQtbXV0ZWQtZm9yZWdyb3VuZCI+e2xhYmVsfTwvbGFiZWw+CiAgICAgIHtjaGlsZHJlbn0KICAgIDwvZGl2PgogICk7Cn0K
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
+import { Check, Download, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { getKokoroStatus, installKokoro, testConnection } from "@/lib/ai.functions";
+import {
+  DEFAULT_MODELS,
+  EDGE_VOICES,
+  ELEVENLABS_VOICES,
+  KOKORO_VOICES,
+  OPENAI_VOICES,
+  loadSettings,
+  saveSettings,
+  type KeySettings,
+  type LlmProvider,
+} from "@/lib/keys";
+
+export const Route = createFileRoute("/setup")({
+  head: () => ({
+    meta: [
+      { title: "Connect your AI key — Aria" },
+      {
+        name: "description",
+        content:
+          "Add your own AI key and optional voice key. Keys stay in this browser and are sent only to the provider you choose.",
+      },
+      { property: "og:title", content: "Connect your AI key — Aria" },
+      {
+        property: "og:description",
+        content: "Bring your own key from OpenAI, Anthropic, Google or any compatible endpoint.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: SetupPage,
+});
+
+const PROVIDERS: { value: LlmProvider; label: string }[] = [
+  { value: "openai", label: "OpenAI" },
+  { value: "anthropic", label: "Anthropic" },
+  { value: "gemini", label: "Google Gemini" },
+  { value: "custom", label: "Custom endpoint" },
+];
+
+function SetupPage() {
+  const navigate = useNavigate();
+  const runTest = useServerFn(testConnection);
+  const runInstallKokoro = useServerFn(installKokoro);
+  const checkKokoro = useServerFn(getKokoroStatus);
+
+  const [settings, setSettings] = useState<KeySettings | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [tested, setTested] = useState(false);
+  const [kokoroInstalling, setKokoroInstalling] = useState(false);
+  const [kokoroReady, setKokoroReady] = useState(false);
+
+  useEffect(() => {
+    setSettings(loadSettings());
+    void (async () => {
+      try {
+        const { installed } = await checkKokoro();
+        setKokoroReady(installed);
+      } catch {
+        /* check failed */
+      }
+    })();
+  }, [checkKokoro]);
+
+  if (!settings) return <main className="min-h-screen" />;
+
+  const update = (patch: Partial<KeySettings>) => {
+    setTested(false);
+    setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const handleInstallKokoro = async () => {
+    setKokoroInstalling(true);
+    try {
+      const res = await runInstallKokoro();
+      setKokoroReady(true);
+      toast.success(res.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download Kokoro model");
+    } finally {
+      setKokoroInstalling(false);
+    }
+  };
+
+  const handleTest = async () => {
+    if (!settings.apiKey.trim() && settings.provider !== "custom") {
+      toast.error("Add your key first");
+      return;
+    }
+    setTesting(true);
+    try {
+      const result = await runTest({
+        data: {
+          provider: settings.provider,
+          apiKey: settings.apiKey || "none",
+          model: settings.model,
+          baseUrl: settings.baseUrl || undefined,
+        },
+      });
+      setTested(true);
+      toast.success(result.sample || "Connection works");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not reach the provider");
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const handleSave = () => {
+    saveSettings(settings);
+    toast.success("Saved on this device");
+    navigate({ to: "/modes" });
+  };
+
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-6 py-16">
+      <div className="animate-rise">
+        <h1 className="text-2xl font-medium tracking-tight">Connect your AI</h1>
+        <p className="mt-3 flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          Your key is stored in this browser only. It is never saved to any account or database,
+          and it is passed straight through to the provider you pick.
+        </p>
+
+        <div className="mt-10 space-y-7">
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Provider
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PROVIDERS.map((provider) => (
+                <button
+                  key={provider.value}
+                  type="button"
+                  onClick={() =>
+                    update({
+                      provider: provider.value,
+                      model: DEFAULT_MODELS[provider.value] || settings.model,
+                    })
+                  }
+                  className={`rounded-full border px-4 py-2 text-sm transition-all duration-400 ${
+                    settings.provider === provider.value
+                      ? "border-primary/60 bg-primary/10 text-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {provider.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Field label="API key">
+            <input
+              type="password"
+              value={settings.apiKey}
+              onChange={(event) => update({ apiKey: event.target.value })}
+              placeholder="sk-..."
+              autoComplete="off"
+              className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+            />
+          </Field>
+
+          <Field label="Model">
+            <input
+              value={settings.model}
+              onChange={(event) => update({ model: event.target.value })}
+              placeholder="gpt-4o-mini"
+              className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+            />
+          </Field>
+
+          {settings.provider === "custom" ? (
+            <Field label="Endpoint address">
+              <input
+                value={settings.baseUrl}
+                onChange={(event) => update({ baseUrl: event.target.value })}
+                placeholder="https://your-endpoint/v1"
+                className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+              />
+            </Field>
+          ) : null}
+
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Voice Provider
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  { id: "kokoro", label: "Kokoro-82M (Local Neural, ~80MB)" },
+                  { id: "edge", label: "Edge Neural (Free Cloud)" },
+                  { id: "elevenlabs", label: "ElevenLabs (Actor Grade)" },
+                  { id: "openai", label: "OpenAI Voice" },
+                  { id: "none", label: "Browser Voice" },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => update({ ttsProvider: option.id })}
+                  className={`rounded-full border px-4 py-2 text-sm transition-all duration-400 ${
+                    settings.ttsProvider === option.id
+                      ? "border-primary/60 bg-primary/10 text-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {settings.ttsProvider === "kokoro" ? (
+            <div className="space-y-3 rounded-2xl border border-primary/25 bg-card/60 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="flex items-center gap-1.5 text-sm font-medium">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Kokoro-82M Local Neural TTS
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    State-of-the-art 82M model running 100% locally and offline on your computer.
+                  </p>
+                </div>
+                {kokoroReady ? (
+                  <span className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
+                    <Check className="h-3 w-3" /> Ready
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleInstallKokoro}
+                    disabled={kokoroInstalling}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-transform hover:scale-105 disabled:opacity-50"
+                  >
+                    {kokoroInstalling ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    {kokoroInstalling ? "Downloading..." : "Download (~80MB)"}
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-1.5 pt-1">
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Kokoro Voice Preset
+                </label>
+                <div className="grid gap-2">
+                  <select
+                    value={settings.voice || "auto"}
+                    onChange={(event) => update({ voice: event.target.value })}
+                    className="w-full rounded-xl border border-input bg-card px-4 py-2.5 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+                  >
+                    {KOKORO_VOICES.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} — {v.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          ) : settings.ttsProvider === "edge" ? (
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Neural Voice Preset
+              </label>
+              <div className="grid gap-2">
+                <select
+                  value={settings.voice || "auto"}
+                  onChange={(event) => update({ voice: event.target.value })}
+                  className="w-full rounded-xl border border-input bg-card px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+                >
+                  {EDGE_VOICES.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} — {v.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-xs text-primary/80">
+                ✨ Free studio-grade Microsoft Neural TTS. Zero setup or API key required.
+              </p>
+            </div>
+          ) : settings.ttsProvider === "elevenlabs" || settings.ttsProvider === "openai" ? (
+            <>
+              <Field label="Voice key">
+                <input
+                  type="password"
+                  value={settings.ttsKey}
+                  onChange={(event) => update({ ttsKey: event.target.value })}
+                  autoComplete="off"
+                  placeholder={settings.ttsProvider === "elevenlabs" ? "xi-api-key..." : "sk-..."}
+                  className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+                />
+              </Field>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Voice Preset
+                </label>
+                <div className="grid gap-2">
+                  <select
+                    value={settings.voice || "auto"}
+                    onChange={(event) => update({ voice: event.target.value })}
+                    className="w-full rounded-xl border border-input bg-card px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+                  >
+                    {(settings.ttsProvider === "elevenlabs" ? ELEVENLABS_VOICES : OPENAI_VOICES).map(
+                      (v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name} — {v.description}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  {settings.ttsProvider === "elevenlabs" ? (
+                    <input
+                      value={settings.voice === "auto" ? "" : settings.voice}
+                      onChange={(event) => update({ voice: event.target.value || "auto" })}
+                      placeholder="Or enter custom ElevenLabs Voice ID (optional)"
+                      className="w-full rounded-xl border border-input bg-card/60 px-4 py-2.5 text-xs outline-none transition-colors duration-300 focus:border-primary/60"
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {settings.voice === "auto" || !settings.voice
+                    ? "✨ Auto selects the ideal voice for each section (Interview, Casual, Companionship, etc.)."
+                    : "Using this specific voice across all conversation modes."}
+                </p>
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleTest}
+            disabled={testing}
+            className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground disabled:opacity-50"
+          >
+            {testing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : tested ? (
+              <Check className="h-4 w-4 text-primary" />
+            ) : null}
+            Test connection
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform duration-500 hover:scale-[1.02]"
+          >
+            Save and continue
+          </button>
+        </div>
+
+        <p className="mt-8 text-xs text-muted-foreground">
+          Want your conversations kept between devices?{" "}
+          <Link to="/auth" className="text-primary/90 underline-offset-4 hover:underline">
+            Create an account
+          </Link>
+          . It is optional.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</label>
+      {children}
+    </div>
+  );
+}

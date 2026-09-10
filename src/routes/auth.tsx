@@ -1,1 +1,116 @@
-aW1wb3J0IHsgY3JlYXRlRmlsZVJvdXRlLCBMaW5rLCB1c2VOYXZpZ2F0ZSB9IGZyb20gIkB0YW5zdGFjay9yZWFjdC1yb3V0ZXIiOwppbXBvcnQgeyB1c2VTdGF0ZSB9IGZyb20gInJlYWN0IjsKaW1wb3J0IHsgTG9hZGVyMiB9IGZyb20gImx1Y2lkZS1yZWFjdCI7CmltcG9ydCB7IHRvYXN0IH0gZnJvbSAic29ubmVyIjsKaW1wb3J0IHsgc3VwYWJhc2UgfSBmcm9tICJAL2ludGVncmF0aW9ucy9zdXBhYmFzZS9jbGllbnQiOwoKZXhwb3J0IGNvbnN0IFJvdXRlID0gY3JlYXRlRmlsZVJvdXRlKCIvYXV0aCIpKHsKICBoZWFkOiAoKSA9PiAoewogICAgbWV0YTogWwogICAgICB7IHRpdGxlOiAiU2lnbiBpbiDigJQgQXJpYSIgfSwKICAgICAgeyBuYW1lOiAiZGVzY3JpcHRpb24iLCBjb250ZW50OiAiQ3JlYXRlIGFuIG9wdGlvbmFsIGFjY291bnQgdG8ga2VlcCB5b3VyIGNvbnZlcnNhdGlvbiBoaXN0b3J5LiIgfSwKICAgICAgeyBwcm9wZXJ0eTogIm9nOnRpdGxlIiwgY29udGVudDogIlNpZ24gaW4g4oCUIEFyaWEiIH0sCiAgICAgIHsgcHJvcGVydHk6ICJvZzp0eXBlIiwgY29udGVudDogIndlYnNpdGUiIH0sCiAgICAgIHsgbmFtZTogInR3aXR0ZXI6Y2FyZCIsIGNvbnRlbnQ6ICJzdW1tYXJ5X2xhcmdlX2ltYWdlIiB9LAogICAgXSwKICB9KSwKICBjb21wb25lbnQ6IEF1dGhQYWdlLAp9KTsKCmZ1bmN0aW9uIEF1dGhQYWdlKCkgewogIGNvbnN0IG5hdmlnYXRlID0gdXNlTmF2aWdhdGUoKTsKICBjb25zdCBbbW9kZSwgc2V0TW9kZV0gPSB1c2VTdGF0ZTwic2lnbmluIiB8ICJzaWdudXAiPigic2lnbmluIik7CiAgY29uc3QgW2VtYWlsLCBzZXRFbWFpbF0gPSB1c2VTdGF0ZSgiIik7CiAgY29uc3QgW3Bhc3N3b3JkLCBzZXRQYXNzd29yZF0gPSB1c2VTdGF0ZSgiIik7CiAgY29uc3QgW2J1c3ksIHNldEJ1c3ldID0gdXNlU3RhdGUoZmFsc2UpOwoKICBjb25zdCBzdWJtaXQgPSBhc3luYyAoZXZlbnQ6IFJlYWN0LkZvcm1FdmVudCkgPT4gewogICAgZXZlbnQucHJldmVudERlZmF1bHQoKTsKICAgIHNldEJ1c3kodHJ1ZSk7CiAgICB0cnkgewogICAgICBpZiAobW9kZSA9PT0gInNpZ251cCIpIHsKICAgICAgICBjb25zdCB7IGRhdGEsIGVycm9yIH0gPSBhd2FpdCBzdXBhYmFzZS5hdXRoLnNpZ25VcCh7CiAgICAgICAgICBlbWFpbCwgcGFzc3dvcmQsCiAgICAgICAgICBvcHRpb25zOiB7IGVtYWlsUmVkaXJlY3RUbzogd2luZG93LmxvY2F0aW9uLm9yaWdpbiB9LAogICAgICAgIH0pOwogICAgICAgIGlmIChlcnJvcikgdGhyb3cgZXJyb3I7CiAgICAgICAgaWYgKCFkYXRhLnNlc3Npb24pIHsKICAgICAgICAgIHRvYXN0LnN1Y2Nlc3MoIkNoZWNrIHlvdXIgZW1haWwgdG8gY29uZmlybSB5b3VyIGFjY291bnQiKTsKICAgICAgICAgIHJldHVybjsKICAgICAgICB9CiAgICAgIH0gZWxzZSB7CiAgICAgICAgY29uc3QgeyBlcnJvciB9ID0gYXdhaXQgc3VwYWJhc2UuYXV0aC5zaWduSW5XaXRoUGFzc3dvcmQoeyBlbWFpbCwgcGFzc3dvcmQgfSk7CiAgICAgICAgaWYgKGVycm9yKSB0aHJvdyBlcnJvcjsKICAgICAgfQogICAgICBuYXZpZ2F0ZSh7IHRvOiAiL2Rhc2hib2FyZCIgfSk7IC8vIOKGkCB3YXMgL21vZGVzCiAgICB9IGNhdGNoIChlcnJvcikgewogICAgICB0b2FzdC5lcnJvcihlcnJvciBpbnN0YW5jZW9mIEVycm9yID8gZXJyb3IubWVzc2FnZSA6ICJTb21ldGhpbmcgd2VudCB3cm9uZyIpOwogICAgfSBmaW5hbGx5IHsKICAgICAgc2V0QnVzeShmYWxzZSk7CiAgICB9CiAgfTsKCiAgcmV0dXJuICgKICAgIDxtYWluIGNsYXNzTmFtZT0ibXgtYXV0byBmbGV4IG1pbi1oLXNjcmVlbiB3LWZ1bGwgbWF4LXctc20gZmxleC1jb2wganVzdGlmeS1jZW50ZXIgcHgtNiBweS0xNiI+CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJhbmltYXRlLXJpc2UiPgogICAgICAgIDxoMSBjbGFzc05hbWU9InRleHQtMnhsIGZvbnQtbWVkaXVtIHRyYWNraW5nLXRpZ2h0Ij4KICAgICAgICAgIHttb2RlID09PSAic2lnbmluIiA/ICJXZWxjb21lIGJhY2siIDogIkNyZWF0ZSBhbiBhY2NvdW50In0KICAgICAgICA8L2gxPgogICAgICAgIDxwIGNsYXNzTmFtZT0ibXQtMiB0ZXh0LXNtIHRleHQtbXV0ZWQtZm9yZWdyb3VuZCI+CiAgICAgICAgICBPbmx5IHVzZWQgdG8ga2VlcCB5b3VyIGNvbnZlcnNhdGlvbiBoaXN0b3J5LiBZb3VyIEFJIGtleSBuZXZlciBsZWF2ZXMgdGhpcyBicm93c2VyLgogICAgICAgIDwvcD4KCiAgICAgICAgPGZvcm0gb25TdWJtaXQ9e3N1Ym1pdH0gY2xhc3NOYW1lPSJtdC04IHNwYWNlLXktNCI+CiAgICAgICAgICA8aW5wdXQgdHlwZT0iZW1haWwiIHJlcXVpcmVkIHZhbHVlPXtlbWFpbH0gb25DaGFuZ2U9eyhlKSA9PiBzZXRFbWFpbChlLnRhcmdldC52YWx1ZSl9CiAgICAgICAgICAgIHBsYWNlaG9sZGVyPSJ5b3VAZXhhbXBsZS5jb20iCiAgICAgICAgICAgIGNsYXNzTmFtZT0idy1mdWxsIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci1pbnB1dCBiZy1jYXJkLzYwIHB4LTQgcHktMyB0ZXh0LXNtIG91dGxpbmUtbm9uZSBmb2N1czpib3JkZXItcHJpbWFyeS82MCIgLz4KICAgICAgICAgIDxpbnB1dCB0eXBlPSJwYXNzd29yZCIgcmVxdWlyZWQgbWluTGVuZ3RoPXs2fSB2YWx1ZT17cGFzc3dvcmR9IG9uQ2hhbmdlPXsoZSkgPT4gc2V0UGFzc3dvcmQoZS50YXJnZXQudmFsdWUpfQogICAgICAgICAgICBwbGFjZWhvbGRlcj0iUGFzc3dvcmQiCiAgICAgICAgICAgIGNsYXNzTmFtZT0idy1mdWxsIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci1pbnB1dCBiZy1jYXJkLzYwIHB4LTQgcHktMyB0ZXh0LXNtIG91dGxpbmUtbm9uZSBmb2N1czpib3JkZXItcHJpbWFyeS82MCIgLz4KICAgICAgICAgIDxidXR0b24gdHlwZT0ic3VibWl0IiBkaXNhYmxlZD17YnVzeX0KICAgICAgICAgICAgY2xhc3NOYW1lPSJmbGV4IHctZnVsbCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgZ2FwLTIgcm91bmRlZC1mdWxsIGJnLXByaW1hcnkgcHgtNiBweS0zIHRleHQtc20gZm9udC1tZWRpdW0gdGV4dC1wcmltYXJ5LWZvcmVncm91bmQgaG92ZXI6c2NhbGUtWzEuMDFdIHRyYW5zaXRpb24tdHJhbnNmb3JtIGR1cmF0aW9uLTUwMCBkaXNhYmxlZDpvcGFjaXR5LTYwIj4KICAgICAgICAgICAge2J1c3kgPyA8TG9hZGVyMiBjbGFzc05hbWU9ImgtNCB3LTQgYW5pbWF0ZS1zcGluIiAvPiA6IG51bGx9CiAgICAgICAgICAgIHttb2RlID09PSAic2lnbmluIiA/ICJTaWduIGluIiA6ICJTaWduIHVwIn0KICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgIDwvZm9ybT4KCiAgICAgICAgPGRpdiBjbGFzc05hbWU9Im10LTggZmxleCBmbGV4LWNvbCBnYXAtMiB0ZXh0LXhzIHRleHQtbXV0ZWQtZm9yZWdyb3VuZCI+CiAgICAgICAgICA8YnV0dG9uIHR5cGU9ImJ1dHRvbiIgb25DbGljaz17KCkgPT4gc2V0TW9kZShtb2RlID09PSAic2lnbmluIiA/ICJzaWdudXAiIDogInNpZ25pbiIpfQogICAgICAgICAgICBjbGFzc05hbWU9InRleHQtbGVmdCBob3Zlcjp0ZXh0LWZvcmVncm91bmQgdHJhbnNpdGlvbi1jb2xvcnMiPgogICAgICAgICAgICB7bW9kZSA9PT0gInNpZ25pbiIgPyAiTm8gYWNjb3VudCB5ZXQ/IENyZWF0ZSBvbmUiIDogIkFscmVhZHkgaGF2ZSBhbiBhY2NvdW50PyBTaWduIGluIn0KICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgICAgPExpbmsgdG89Ii9kYXNoYm9hcmQiIGNsYXNzTmFtZT0iaG92ZXI6dGV4dC1mb3JlZ3JvdW5kIHRyYW5zaXRpb24tY29sb3JzIj4KICAgICAgICAgICAgQ29udGludWUgd2l0aG91dCBhbiBhY2NvdW50CiAgICAgICAgICA8L0xpbms+CiAgICAgICAgPC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9tYWluPgogICk7Cn0K
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/auth")({
+  head: () => ({
+    meta: [
+      { title: "Sign in — Aria" },
+      {
+        name: "description",
+        content:
+          "Create an optional account to keep your conversation history. You can also use Aria entirely on this device.",
+      },
+      { property: "og:title", content: "Sign in — Aria" },
+      {
+        property: "og:description",
+        content: "Optional account for saved conversations.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: AuthPage,
+});
+
+function AuthPage() {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          toast.success("Check your email to confirm your account");
+          return;
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+      navigate({ to: "/modes" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-6 py-16">
+      <div className="animate-rise">
+        <h1 className="text-2xl font-medium tracking-tight">
+          {mode === "signin" ? "Welcome back" : "Create an account"}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Only used to keep your conversation history. Your AI key never leaves this browser.
+        </p>
+
+        <form onSubmit={submit} className="mt-8 space-y-4">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+          />
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Password"
+            className="w-full rounded-xl border border-input bg-card/60 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary/60"
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform duration-500 hover:scale-[1.01] disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {mode === "signin" ? "Sign in" : "Sign up"}
+          </button>
+        </form>
+
+
+        <div className="mt-8 flex flex-col gap-2 text-xs text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            className="text-left transition-colors duration-300 hover:text-foreground"
+          >
+            {mode === "signin" ? "No account yet? Create one" : "Already have an account? Sign in"}
+          </button>
+          <Link to="/modes" className="transition-colors duration-300 hover:text-foreground">
+            Continue without an account
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
