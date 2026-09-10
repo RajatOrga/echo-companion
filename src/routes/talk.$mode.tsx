@@ -18,6 +18,21 @@ import { getMode, REPLY_CONTRACT } from "@/lib/modes";
 import { getScene } from "@/lib/scenes";
 import { supabase } from "@/integrations/supabase/client";
 
+// ───────────────────────────────────────────────────────────────
+// FIX 1: Filler-noise filter
+// Prevents mic noise / single garbled words from reaching the AI.
+// This is the primary cause of "I didn't catch that" loops.
+// ───────────────────────────────────────────────────────────────
+const FILLER_RE =
+  /^(um+|uh+|er+|hmm+|hm+|mm+|ah+|oh+|eh+|right|ok|okay|yeah|nah|sure|like|so|well|the|a|an|is|it|this|that|hey|hi|hello)\.?$/i;
+
+function isTooShort(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length < 3) return true;
+  const words = trimmed.split(/\s+/);
+  return words.length === 1 && FILLER_RE.test(trimmed);
+}
+
 export const Route = createFileRoute("/talk/$mode")({
   validateSearch: (search: Record<string, unknown>): { session?: string } =>
     typeof search['session'] === "string" ? { session: search['session'] } : {},
@@ -25,9 +40,9 @@ export const Route = createFileRoute("/talk/$mode")({
     const mode = getMode(params.mode);
     return {
       meta: [
-        { title: `${mode.name} — Aria` },
+        { title: `${mode.name} \u2014 Aria` },
         { name: "description", content: mode.tagline },
-        { property: "og:title", content: `${mode.name} — Aria` },
+        { property: "og:title", content: `${mode.name} \u2014 Aria` },
         { property: "og:description", content: mode.tagline },
         { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary_large_image" },
@@ -70,6 +85,12 @@ function TalkPage() {
   const { speak, stopSpeaking } = useVoiceOutput(engineRef.current, tts);
 
   useEffect(() => { handsFreeRef.current = handsFree; }, [handsFree]);
+
+  // ───────────────────────────────────────────────────────────────
+  // FIX 2: isSpeakingRef — gate the mic while Aria is talking
+  // ───────────────────────────────────────────────────────────────
+  const isSpeakingRef = useRef(false);
+  useEffect(() => { isSpeakingRef.current = speaking || busy; }, [speaking, busy]);
 
   useEffect(() => {
     const loaded = loadSettings();
@@ -226,6 +247,11 @@ function TalkPage() {
             emotion: "warm",
             intensity: 0.6,
             browser: mode.voice.browser,
+            // FIX 3: Stop mic the moment audio playback starts
+            onPlaybackStart: () => {
+              isSpeakingRef.current = true;
+              speechRef.current?.stop();
+            },
           });
         } finally {
           if (parsed.reply) {
@@ -233,6 +259,7 @@ function TalkPage() {
             void persist("assistant", parsed.reply, parsed.emotion, parsed.intensity);
           }
           setSpeaking(false);
+          isSpeakingRef.current = false;
           engineRef.current.settle(0.2);
           gazeRef.current = "user";
           if (handsFreeRef.current && speechRef.current?.supported) {
@@ -242,6 +269,7 @@ function TalkPage() {
       } catch (error) {
         setBusy(false);
         setSpeaking(false);
+        isSpeakingRef.current = false;
         turnsRef.current = turnsRef.current.filter((turn) => turn !== history[history.length - 1]);
         setLastFailed(message);
         toast.error(error instanceof Error ? error.message : "That did not go through");
@@ -250,17 +278,30 @@ function TalkPage() {
     [ask, mode, persist, speak, stopSpeaking],
   );
 
-  const speech = useSpeechInput((text) => void send(text), {
-    continuous: handsFree,
-    onSpeechStart: () => {
-      stopSpeaking();
-      setSpeaking(false);
-      if (settingsRef.current?.ttsProvider === "edge") {
-        const activeVoice = getVoiceForMode(settingsRef.current, mode);
-        void warmTts({ data: { voice: activeVoice } }).catch(() => {});
+  // ───────────────────────────────────────────────────────────────
+  // FIX 4: Filtered sender + isSpeakingRef passed to useSpeechInput
+  // ───────────────────────────────────────────────────────────────
+  const speech = useSpeechInput(
+    (text) => {
+      if (isTooShort(text)) {
+        console.debug("[speech] Noise/filler skipped:", JSON.stringify(text));
+        return;
       }
+      void send(text);
     },
-  });
+    {
+      continuous: handsFree,
+      isSpeakingRef,
+      onSpeechStart: () => {
+        stopSpeaking();
+        setSpeaking(false);
+        if (settingsRef.current?.ttsProvider === "edge") {
+          const activeVoice = getVoiceForMode(settingsRef.current, mode);
+          void warmTts({ data: { voice: activeVoice } }).catch(() => {});
+        }
+      },
+    },
+  );
   speechRef.current = { start: speech.start, stop: speech.stop, supported: speech.supported };
 
   const toggleMic = useCallback(() => {
@@ -285,10 +326,10 @@ function TalkPage() {
   const interrupt = useCallback(() => {
     stopSpeaking();
     setSpeaking(false);
+    isSpeakingRef.current = false;
     engineRef.current.settle(0.4);
   }, [stopSpeaking]);
 
-  /* ── Status label ── */
   const statusLabel = busy
     ? "thinking"
     : speaking
@@ -299,7 +340,6 @@ function TalkPage() {
 
   return (
     <div className="relative h-screen overflow-hidden">
-      {/* Avatar fills the screen */}
       <div className="absolute inset-0">
         <AvatarStage
           engine={engineRef.current}
@@ -311,23 +351,15 @@ function TalkPage() {
           config={scene}
         />
       </div>
-
-      {/* Top bar */}
       <div className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-background/90 to-transparent">
         <TopBar title={mode.name} onTranscript={() => setShowTranscript(true)} />
       </div>
-
-      {/* Status chip */}
       <div className="pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center">
-        <span
-          className={`flex items-center gap-2 rounded-full border px-3.5 py-1 text-[10px] uppercase tracking-[0.18em] backdrop-blur-md transition-all duration-500 ${
-            speech.listening
-              ? "border-primary/40 bg-primary/10 text-primary"
-              : busy
-                ? "border-border/60 bg-card/60 text-muted-foreground"
-                : "border-border/60 bg-card/60 text-muted-foreground/90"
-          }`}
-        >
+        <span className={`flex items-center gap-2 rounded-full border px-3.5 py-1 text-[10px] uppercase tracking-[0.18em] backdrop-blur-md transition-all duration-500 ${
+          speech.listening ? "border-primary/40 bg-primary/10 text-primary"
+          : busy ? "border-border/60 bg-card/60 text-muted-foreground"
+          : "border-border/60 bg-card/60 text-muted-foreground/90"
+        }`}>
           {handsFree ? (
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
@@ -343,73 +375,34 @@ function TalkPage() {
           {statusLabel}
         </span>
       </div>
-
-      {/* Bottom controls */}
       <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-3 px-4 pb-7">
         <Captions items={captions} interim={speech.interim} />
-
-        {/* Action chips */}
         <div className="flex items-center gap-2">
           {speaking ? (
-            <button
-              type="button"
-              onClick={interrupt}
-              className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/70 px-3.5 py-1.5 text-xs text-muted-foreground backdrop-blur-md transition-all duration-300 hover:border-border hover:text-foreground active:scale-95"
-            >
-              <Square className="h-3 w-3" />
-              Stop
+            <button type="button" onClick={interrupt} className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/70 px-3.5 py-1.5 text-xs text-muted-foreground backdrop-blur-md transition-all duration-300 hover:border-border hover:text-foreground active:scale-95">
+              <Square className="h-3 w-3" />Stop
             </button>
           ) : null}
           {lastFailed && !busy ? (
-            <button
-              type="button"
-              onClick={() => void send(lastFailed)}
-              className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-xs text-primary backdrop-blur-md transition-all duration-300 hover:border-primary active:scale-95"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Try again
+            <button type="button" onClick={() => void send(lastFailed)} className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-xs text-primary backdrop-blur-md transition-all duration-300 hover:border-primary active:scale-95">
+              <RotateCcw className="h-3 w-3" />Try again
             </button>
           ) : null}
         </div>
-
-        {/* Control dock */}
-        <div
-          className={`flex w-full max-w-xl items-center gap-2.5 rounded-full border bg-card/70 p-2 shadow-2xl backdrop-blur-xl transition-all duration-400 ${
-            handsFree
-              ? "border-primary/40 shadow-primary/10"
-              : "border-border/70"
-          }`}
-        >
-          <MicButton
-            listening={speech.listening}
-            busy={busy}
-            disabled={!speech.supported}
-            onToggle={toggleMic}
-          />
-
+        <div className={`flex w-full max-w-xl items-center gap-2.5 rounded-full border bg-card/70 p-2 shadow-2xl backdrop-blur-xl transition-all duration-400 ${
+          handsFree ? "border-primary/40 shadow-primary/10" : "border-border/70"
+        }`}>
+          <MicButton listening={speech.listening} busy={busy} disabled={!speech.supported} onToggle={toggleMic} />
           <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              const text = draft;
-              setDraft("");
-              void send(text);
-            }}
+            onSubmit={(event) => { event.preventDefault(); const text = draft; setDraft(""); void send(text); }}
             className="flex min-w-0 flex-1 items-center gap-2"
           >
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder={
-                handsFree
-                  ? "Live conversation active… speak naturally"
-                  : speech.supported
-                    ? "Say it, or type…"
-                    : "Type your message"
-              }
+              placeholder={handsFree ? "Live conversation active\u2026 speak naturally" : speech.supported ? "Say it, or type\u2026" : "Type your message"}
               className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground/50"
             />
-
-            {/* Live mode toggle */}
             {speech.supported ? (
               <button
                 type="button"
@@ -417,19 +410,13 @@ function TalkPage() {
                 aria-pressed={handsFree}
                 aria-label="Live Conversation Mode"
                 className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all duration-300 active:scale-95 ${
-                  handsFree
-                    ? "border border-primary/40 bg-primary/15 text-primary"
-                    : "border border-border/40 text-muted-foreground hover:border-border hover:text-foreground"
+                  handsFree ? "border border-primary/40 bg-primary/15 text-primary" : "border border-border/40 text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
               >
                 <Radio className={`h-3.5 w-3.5 ${handsFree ? "animate-pulse" : ""}`} />
-                <span className="text-[11px] tracking-wide">
-                  {handsFree ? "Live ON" : "Live"}
-                </span>
+                <span className="text-[11px] tracking-wide">{handsFree ? "Live ON" : "Live"}</span>
               </button>
             ) : null}
-
-            {/* Send button */}
             <button
               type="submit"
               aria-label="Send"
@@ -441,13 +428,8 @@ function TalkPage() {
           </form>
         </div>
       </div>
-
       {showTranscript ? (
-        <TranscriptPanel
-          items={captions}
-          title={mode.name}
-          onClose={() => setShowTranscript(false)}
-        />
+        <TranscriptPanel items={captions} title={mode.name} onClose={() => setShowTranscript(false)} />
       ) : null}
     </div>
   );
