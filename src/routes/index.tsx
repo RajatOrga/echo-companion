@@ -1,25 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowRight, KeyRound, MessagesSquare, Sparkles } from "lucide-react";
 import { MODES } from "@/lib/modes";
+import { hasKey, loadSettings } from "@/lib/keys";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Aria — an AI companion you can talk to out loud" },
-      {
-        name: "description",
-        content:
-          "A calm, private space to practise speaking with a face that listens and reacts. Bring your own AI key; your conversations stay yours.",
-      },
-      { property: "og:title", content: "Aria — an AI companion you can talk to out loud" },
-      {
-        property: "og:description",
-        content:
-          "Practise conversation, interviews or English with a responsive 3D face. Voice in, voice out, powered by your own AI key.",
-      },
+      { title: "Aria \u2014 an AI companion you can talk to out loud" },
+      { name: "description", content: "A calm, private space to practise speaking with a face that listens and reacts." },
+      { property: "og:title", content: "Aria \u2014 an AI companion you can talk to out loud" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Onboarding,
@@ -29,7 +20,7 @@ const STEPS = [
   {
     icon: Sparkles,
     title: "A face that actually listens",
-    body: "Speak out loud and a face answers out loud — its expression, gaze and timing follow the conversation instead of sitting still.",
+    body: "Speak out loud and a face answers out loud \u2014 its expression, gaze and timing follow the conversation instead of sitting still.",
   },
   {
     icon: KeyRound,
@@ -45,6 +36,14 @@ const STEPS = [
 
 function Onboarding() {
   const [step, setStep] = useState(0);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (hasKey(loadSettings())) {
+      void navigate({ to: "/dashboard", replace: true });
+    }
+  }, [navigate]);
+
   const current = STEPS[step]!;
   const Icon = current.icon;
   const last = step === STEPS.length - 1;
@@ -57,18 +56,13 @@ function Onboarding() {
       />
       <div key={step} className="animate-rise relative w-full max-w-md text-center">
         <Icon className="mx-auto h-7 w-7 text-primary" />
-        <h1 className="mt-8 text-3xl font-medium tracking-tight text-balance-tight">
-          {current.title}
-        </h1>
+        <h1 className="mt-8 text-3xl font-medium tracking-tight">{current.title}</h1>
         <p className="mt-5 text-base leading-relaxed text-muted-foreground">{current.body}</p>
 
         {last ? (
           <ul className="mt-8 flex flex-wrap justify-center gap-2">
             {MODES.map((mode) => (
-              <li
-                key={mode.slug}
-                className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
-              >
+              <li key={mode.slug} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
                 {mode.name}
               </li>
             ))}

@@ -1,18 +1,26 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ScrollText, Settings } from "lucide-react";
+import { ChevronLeft, Home, ScrollText, Settings } from "lucide-react";
 
 export function TopBar({ title, onTranscript }: { title: string; onTranscript?: () => void }) {
   return (
     <header className="flex items-center justify-between px-5 py-3.5 text-sm">
-      <Link
-        to="/modes"
-        className="flex items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-muted-foreground transition-all duration-300 hover:border-border hover:bg-card/60 hover:text-foreground"
-      >
-        <ChevronLeft className="h-3.5 w-3.5" />
-        <span className="text-xs tracking-wide">Modes</span>
-      </Link>
+      <div className="flex items-center gap-1">
+        <Link
+          to="/modes"
+          className="flex items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-muted-foreground transition-all duration-300 hover:border-border hover:bg-card/60 hover:text-foreground"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          <span className="text-xs tracking-wide">Modes</span>
+        </Link>
+        <Link
+          to="/dashboard"
+          aria-label="Home"
+          className="rounded-xl border border-transparent p-2 text-muted-foreground transition-all duration-300 hover:border-border hover:bg-card/60 hover:text-foreground"
+        >
+          <Home className="h-3.5 w-3.5" />
+        </Link>
+      </div>
 
-      {/* Logo + mode label */}
       <div className="flex items-center gap-2">
         <span className="flex h-5 w-5 items-center justify-center">
           <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">

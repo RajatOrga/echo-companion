@@ -1,16 +1,8 @@
-/**
- * Room scenes. Each conversation mode happens somewhere real-feeling:
- * a bedroom for the companion, an office for the interview, and so on.
- * All furniture is CC0 (Kenney furniture kit) and served from /models/furniture.
- */
-
 import type { ModeSlug } from "@/lib/modes";
 
 export type Prop = {
   model: string;
-  /** metres, room space */
   position: [number, number, number];
-  /** radians around Y */
   rotationY?: number;
   scale?: number;
 };
@@ -20,18 +12,18 @@ export type SceneConfig = {
   label: string;
   floor: string;
   wall: string;
-  /** key light colour — the "screen glow" on the face */
   key: string;
   fill: string;
   avatar: string;
+  /** If true, loads avatar via FBXLoader instead of GLTFLoader */
+  isFbx?: boolean;
   props: Prop[];
-  /** hip height + placement of the seated figure */
   seat: { position: [number, number, number]; rotationY: number; lean: number };
   camera: { position: [number, number, number]; target: [number, number, number]; fov: number };
 };
 
 const F = 1.9;
-const WALL = 1.93; // slight overlap so the wall panels show no seams // Kenney furniture kit → metres
+const WALL = 1.93;
 
 function wallRow(model: "wall" | "wallWindow", x: number): Prop {
   return { model, position: [x, 0, -2.3], scale: WALL };
@@ -94,11 +86,17 @@ const OFFICE: SceneConfig = {
   camera: { position: [0.18, 1.34, 1.70], target: [-0.02, 1.22, -0.4], fov: 32 },
 };
 
+const INTERVIEW_OFFICE: SceneConfig = {
+  ...OFFICE,
+  avatar: "/models/avatars/claudia.fbx",
+  isFbx: true,
+};
+
 const BY_MODE: Record<ModeSlug, SceneConfig> = {
   companion: BEDROOM,
   english: BEDROOM,
   communication: { ...OFFICE, avatar: "/models/avatars/celeste.glb" },
-  interview: { ...OFFICE, avatar: "/models/avatars/aurora.glb" },
+  interview: INTERVIEW_OFFICE,
   study: { ...OFFICE, avatar: "/models/avatars/aurora.glb" },
 };
 
