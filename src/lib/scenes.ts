@@ -15,8 +15,8 @@ export type SceneConfig = {
   key: string;
   fill: string;
   avatar: string;
-  /** If true, loads avatar via FBXLoader instead of GLTFLoader */
-  isFbx?: boolean;
+  /** @deprecated FBX support removed — all avatars now use GLB */
+  isFbx?: never;
   props: Prop[];
   seat: { position: [number, number, number]; rotationY: number; lean: number };
   camera: { position: [number, number, number]; target: [number, number, number]; fov: number };
@@ -29,7 +29,10 @@ function wallRow(model: "wall" | "wallWindow", x: number): Prop {
   return { model, position: [x, 0, -2.3], scale: WALL };
 }
 
-const BEDROOM: SceneConfig = {
+// ───────────────────────────────────────────────────────────────
+// COMPANION — cozy bedroom, lavender-rose tones, mint.glb
+// ───────────────────────────────────────────────────────────────
+const COMPANION_ROOM: SceneConfig = {
   id: "bedroom",
   label: "Her room",
   floor: "#4a3a30",
@@ -59,59 +62,131 @@ const BEDROOM: SceneConfig = {
   camera: { position: [0.16, 1.15, 1.48], target: [-0.02, 0.98, -0.48], fov: 32 },
 };
 
-const OFFICE: SceneConfig = {
-  id: "office",
-  label: "The office",
-  floor: "#3b3a3f",
-  wall: "#26262e",
-  key: "#f4e9dd",
-  fill: "#6a7690",
+// ───────────────────────────────────────────────────────────────
+// ENGLISH — reading nook, sage-green forest tones, aurora.glb
+// (Completely different from companion: different model, wall,
+//  lighting colour, and room feel — no more same-model clones)
+// ───────────────────────────────────────────────────────────────
+const ENGLISH_ROOM: SceneConfig = {
+  id: "bedroom",
+  label: "Reading nook",
+  floor: "#2e2a22",
+  wall: "#1a2420",
+  key: "#e8d5a0",
+  fill: "#6a9478",
   avatar: "/models/avatars/aurora.glb",
   props: [
     wallRow("wall", -2.85),
     wallRow("wallWindow", -0.95),
     wallRow("wall", 0.95),
-    { model: "chairDesk", position: [-0.1, 0, -0.62], rotationY: 0, scale: 1.45 },
-    { model: "desk", position: [-0.68, 0, 0.95], scale: F },
-    { model: "laptop", position: [0.34, 0.72, 0.78], rotationY: Math.PI, scale: 0.72 },
-    { model: "computerKeyboard", position: [-0.26, 0.72, 0.62], rotationY: Math.PI, scale: 1.1 },
-    { model: "books", position: [-0.62, 0.72, 0.8], scale: 1.2 },
-    { model: "bookcaseClosedWide", position: [-2.6, 0, -2.15], scale: F },
-    { model: "pottedPlant", position: [2.25, 0, -1.8], scale: F },
-    { model: "lampSquareFloor", position: [1.55, 0, -1.9], scale: F },
-    { model: "trashcan", position: [-1.9, 0, 0.3], scale: 1 },
-    { model: "rugRectangle", position: [-1.6, 0.005, 0.2], scale: F },
+    { model: "bookcaseOpen", position: [-1.8, 0, -2.2], scale: F },
+    { model: "books", position: [-1.55, 0.55, -2.05], scale: 1.2 },
+    { model: "bookcaseClosedWide", position: [1.9, 0, -2.15], scale: F },
+    { model: "books", position: [1.6, 0.55, -2.05], scale: 1.2 },
+    { model: "lampRoundTable", position: [-2.0, 0.49, -1.6], scale: F },
+    { model: "lampSquareFloor", position: [2.4, 0, -1.1], scale: F },
+    { model: "rugRounded", position: [-0.2, 0.005, 0.8], scale: F },
+    { model: "chairDesk", position: [0, 0, -0.55], rotationY: 0.0, scale: 1.45 },
+    { model: "pottedPlant", position: [-2.5, 0, -0.8], scale: F },
+    { model: "plantSmall2", position: [1.6, 0.49, -2.05], scale: F },
   ],
-  seat: { position: [0, 0.52, -0.42], rotationY: -0.04, lean: 0.14 },
-  camera: { position: [0.18, 1.34, 1.70], target: [-0.02, 1.22, -0.4], fov: 32 },
+  seat: { position: [0, 0.48, -0.5], rotationY: 0.0, lean: 0.08 },
+  camera: { position: [0.1, 1.12, 1.48], target: [-0.02, 0.96, -0.48], fov: 32 },
 };
 
-const INTERVIEW_OFFICE: SceneConfig = {
-  ...OFFICE,
-  avatar: "/models/avatars/claudia.fbx",
-  isFbx: true,
+// Shared office props base
+const OFFICE_PROPS: Prop[] = [
+  wallRow("wall", -2.85),
+  wallRow("wallWindow", -0.95),
+  wallRow("wall", 0.95),
+  { model: "chairDesk", position: [-0.1, 0, -0.62], rotationY: 0, scale: 1.45 },
+  { model: "desk", position: [-0.68, 0, 0.95], scale: F },
+  { model: "laptop", position: [0.34, 0.72, 0.78], rotationY: Math.PI, scale: 0.72 },
+  { model: "computerKeyboard", position: [-0.26, 0.72, 0.62], rotationY: Math.PI, scale: 1.1 },
+  { model: "books", position: [-0.62, 0.72, 0.8], scale: 1.2 },
+  { model: "bookcaseClosedWide", position: [-2.6, 0, -2.15], scale: F },
+  { model: "pottedPlant", position: [2.25, 0, -1.8], scale: F },
+  { model: "lampSquareFloor", position: [1.55, 0, -1.9], scale: F },
+  { model: "trashcan", position: [-1.9, 0, 0.3], scale: 1 },
+  { model: "rugRectangle", position: [-1.6, 0.005, 0.2], scale: F },
+];
+
+const OFFICE_SEAT = { position: [0, 0.52, -0.42] as [number,number,number], rotationY: -0.04, lean: 0.14 };
+const OFFICE_CAMERA = { position: [0.18, 1.34, 1.70] as [number,number,number], target: [-0.02, 1.22, -0.4] as [number,number,number], fov: 32 };
+
+// ───────────────────────────────────────────────────────────────
+// COMMUNICATION — warm golden studio, companion_female.glb
+// ───────────────────────────────────────────────────────────────
+const COMMUNICATION_ROOM: SceneConfig = {
+  id: "office",
+  label: "The studio",
+  floor: "#3b3530",
+  wall: "#241f1a",
+  key: "#ffcc80",
+  fill: "#a08870",
+  avatar: "/models/avatars/companion_female.glb",
+  props: OFFICE_PROPS,
+  seat: OFFICE_SEAT,
+  camera: OFFICE_CAMERA,
 };
 
+// ───────────────────────────────────────────────────────────────
+// INTERVIEW — cool professional steel-blue office, celeste.glb
+// NOTE: FBX completely removed — was crashing the page because
+// the binary model file can't be pushed via GitHub API.
+// ───────────────────────────────────────────────────────────────
+const INTERVIEW_ROOM: SceneConfig = {
+  id: "office",
+  label: "The boardroom",
+  floor: "#252830",
+  wall: "#161820",
+  key: "#cce4f8",
+  fill: "#4a5a78",
+  avatar: "/models/avatars/celeste.glb",
+  props: OFFICE_PROPS,
+  seat: OFFICE_SEAT,
+  camera: OFFICE_CAMERA,
+};
+
+// ───────────────────────────────────────────────────────────────
+// STUDY — warm honey bookish office, aurora.glb
+// ───────────────────────────────────────────────────────────────
+const STUDY_ROOM: SceneConfig = {
+  id: "office",
+  label: "Study hall",
+  floor: "#2e2820",
+  wall: "#1e1a12",
+  key: "#ffd880",
+  fill: "#8a7055",
+  avatar: "/models/avatars/aurora.glb",
+  props: OFFICE_PROPS,
+  seat: OFFICE_SEAT,
+  camera: OFFICE_CAMERA,
+};
+
+// ───────────────────────────────────────────────────────────────
+// Routing
+// ───────────────────────────────────────────────────────────────
 const BY_MODE: Record<ModeSlug, SceneConfig> = {
-  companion: BEDROOM,
-  english: BEDROOM,
-  communication: { ...OFFICE, avatar: "/models/avatars/celeste.glb" },
-  interview: INTERVIEW_OFFICE,
-  study: { ...OFFICE, avatar: "/models/avatars/aurora.glb" },
+  companion:     COMPANION_ROOM,
+  english:       ENGLISH_ROOM,
+  communication: COMMUNICATION_ROOM,
+  interview:     INTERVIEW_ROOM,
+  study:         STUDY_ROOM,
 };
 
 export function getScene(mode: string): SceneConfig {
-  return BY_MODE[mode as ModeSlug] ?? BEDROOM;
+  return BY_MODE[mode as ModeSlug] ?? COMPANION_ROOM;
 }
 
+// All unique GLB models to preload at startup
 export const AVATAR_MODELS = [
-  "/models/avatars/companion_female.glb",
   "/models/avatars/mint.glb",
   "/models/avatars/aurora.glb",
   "/models/avatars/celeste.glb",
-  "/models/avatars/interviewer_male.glb",
+  "/models/avatars/companion_female.glb",
 ];
 
 export const FURNITURE_MODELS = Array.from(
-  new Set([...BEDROOM.props, ...OFFICE.props].map((prop) => prop.model)),
+  new Set([...COMPANION_ROOM.props, ...ENGLISH_ROOM.props, ...OFFICE_PROPS].map((p) => p.model)),
 ).map((name) => `/models/furniture/${name}.glb`);

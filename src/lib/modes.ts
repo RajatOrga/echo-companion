@@ -22,11 +22,6 @@ export type Mode = {
   voice: ModeVoiceConfig;
 };
 
-/**
- * Local copy of the mode presets so the app works even with no backend at all
- * (fully portable / self-hostable). The same rows live in the database for
- * signed-in history.
- */
 export const MODES: Mode[] = [
   {
     slug: "communication",
@@ -104,10 +99,49 @@ export function getMode(slug: string | undefined): Mode {
   return MODES.find((m) => m.slug === slug) ?? MODES[0]!;
 }
 
-export const REPLY_CONTRACT = `Spoken conversation rules — follow these strictly:
-- Reply in 1-3 short spoken sentences maximum. Be direct and natural.
-- You are speaking out loud on a live voice call. Write only what you would actually say.
-- NEVER use: numbered lists (1. 2. 3.), bullet points (- or *), headings, markdown, brackets [...], asterisks, parenthetical stage directions, emojis, or any special characters.
-- NEVER write things like "(laughs)" or "*smiles*" or "[emotion: warm]" — these will be read aloud and sound broken.
-- Only plain spoken words. If you want to list things, say them naturally: "First... and second..."`;
+/**
+ * REPLY_CONTRACT
+ * ───────────────────────────────────────────────────────────────
+ * IMPORTANT: This contract is appended to every system prompt.
+ * The [emotion/gaze/head] tags at the end of each reply are
+ * MACHINE-READABLE METADATA — they are stripped before the text
+ * is displayed or spoken. They drive the 3-D avatar's face and
+ * head animation so the avatar feels alive and reactive.
+ *
+ * Omitting them means the avatar just sits still and nods blankly.
+ * Including them correctly means a genuinely expressive, human-
+ * feeling performance that matches the emotional tone of the reply.
+ *
+ * Valid values:
+ *   emotion : warm | happy | amused | curious | thoughtful | concerned | neutral
+ *   intensity: 0.4–0.9  (higher = more expressive face)
+ *   gaze     : user | away | down
+ *              user  = looking directly at the listener
+ *              away  = glancing to the side (thinking, recalling)
+ *              down  = looking downward (empathy, gravity)
+ *   head     : still | nod | shake | tilt
+ *              nod   = agreement / affirmation
+ *              shake = gentle disagreement / "no"
+ *              tilt  = curiosity / listening intently
+ *              still = neutral, no active gesture
+ */
+export const REPLY_CONTRACT = `Spoken conversation rules — FOLLOW THESE EXACTLY:
 
+1. Reply in 1–3 short natural spoken sentences. Be direct and human.
+2. Write ONLY what you would actually say out loud on a live voice call.
+3. NO markdown, NO numbered lists, NO bullet points, NO asterisks, NO headings.
+4. After your spoken reply, on a new line add the avatar metadata tag. This tag is
+   stripped before the user sees or hears it — it only drives the 3D face animation.
+   Format (all on one line, no extra text):
+   [emotion: X] [intensity: X] [gaze: X] [head: X]
+5. Choose values that MATCH what you are actually expressing.
+   Examples:
+   - Laughing / delighted  → [emotion: amused]  [intensity: 0.85] [gaze: user] [head: nod]
+   - Asking a question     → [emotion: curious]  [intensity: 0.72] [gaze: user] [head: tilt]
+   - Showing empathy       → [emotion: concerned] [intensity: 0.7]  [gaze: down] [head: tilt]
+   - Saying no / correcting→ [emotion: thoughtful][intensity: 0.6]  [gaze: user] [head: shake]
+   - Normal warm reply     → [emotion: warm]     [intensity: 0.6]  [gaze: user] [head: still]
+   - Excited / positive    → [emotion: happy]    [intensity: 0.8]  [gaze: user] [head: nod]
+   - Thinking aloud        → [emotion: thoughtful][intensity: 0.65] [gaze: away] [head: tilt]
+6. NEVER write stage directions like (laughs) or *smiles* — the metadata tag handles that.
+7. If you want to list things, say them naturally: "First... and second..."`;
