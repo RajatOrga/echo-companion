@@ -69,9 +69,7 @@ function TalkPage() {
   const warmTts = useServerFn(warmTtsServer);
   const { speak, stopSpeaking } = useVoiceOutput(engineRef.current, tts);
 
-  useEffect(() => {
-    handsFreeRef.current = handsFree;
-  }, [handsFree]);
+  useEffect(() => { handsFreeRef.current = handsFree; }, [handsFree]);
 
   useEffect(() => {
     const loaded = loadSettings();
@@ -79,7 +77,6 @@ function TalkPage() {
     if (!hasKey(loaded)) navigate({ to: "/setup" });
   }, [navigate]);
 
-  // Pick a saved conversation back up exactly where it stopped.
   useEffect(() => {
     if (!resumeId || !user) return;
     let cancelled = false;
@@ -92,16 +89,13 @@ function TalkPage() {
       if (cancelled || error || !data) return;
       const turns = data
         .filter((row): row is typeof row & { role: "user" | "assistant" } =>
-          row.role === "user" || row.role === "assistant",
-        )
+          row.role === "user" || row.role === "assistant")
         .map((row) => ({ role: row.role, content: row.content }));
       sessionId.current = resumeId;
       turnsRef.current = turns;
       setCaptions(turns.map((turn, index) => ({ id: `${resumeId}-${index}`, ...turn })));
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [resumeId, user]);
 
   const persist = useCallback(
@@ -111,13 +105,8 @@ function TalkPage() {
         if (!sessionId.current) {
           const { data, error } = await supabase
             .from("sessions")
-            .insert({
-              user_id: user.id,
-              mode: mode.slug,
-              title: content.slice(0, 60) || mode.name,
-            })
-            .select("id")
-            .single();
+            .insert({ user_id: user.id, mode: mode.slug, title: content.slice(0, 60) || mode.name })
+            .select("id").single();
           if (error) throw error;
           sessionId.current = data.id;
         }
@@ -129,9 +118,7 @@ function TalkPage() {
           emotion: emotion ?? null,
           intensity: intensity ?? null,
         });
-      } catch {
-        /* saved history is a nice-to-have; never block the conversation */
-      }
+      } catch { /* history is nice-to-have */ }
     },
     [user, mode],
   );
@@ -147,10 +134,7 @@ function TalkPage() {
       stopSpeaking();
       setBusy(true);
       setLastFailed(null);
-      setCaptions((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: "user", content: message },
-      ]);
+      setCaptions((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: message }]);
       const history = [...turnsRef.current, { role: "user" as const, content: message }];
       turnsRef.current = history;
       void persist("user", message);
@@ -176,7 +160,6 @@ function TalkPage() {
         const reader = responseObj.body?.getReader();
         if (!reader) throw new Error("No response body received from stream");
 
-        // Switch from "thinking" to "speaking" immediately
         setBusy(false);
         setSpeaking(true);
 
@@ -184,7 +167,6 @@ function TalkPage() {
         setCaptions((prev) => [...prev, { id: aiId, role: "assistant", content: "" }]);
 
         let fullText = "";
-        // Use a ref-like object so cleanStream closure always reads the latest parsed values
         let parsed = { reply: "", emotion: "neutral", intensity: 0.5, gaze: "user", head: "still" };
         let previousReplyLength = 0;
 
@@ -215,7 +197,6 @@ function TalkPage() {
             fullText += chunk;
             const cleanFull = stripStreamingSpeech(fullText);
             parsed = parseTurn(fullText);
-
             const newText = cleanFull.slice(previousReplyLength);
             if (newText.length > 0) {
               if (isEmotionName(parsed.emotion)) {
@@ -226,11 +207,9 @@ function TalkPage() {
                 setHeadGesture(parsed.head);
                 setGestureKey((k) => k + 1);
               }
-
               yield newText;
               previousReplyLength = cleanFull.length;
             }
-
             setCaptions((prev) => {
               const next = [...prev];
               const last = next[next.length - 1];
@@ -244,34 +223,25 @@ function TalkPage() {
         try {
           await speak(cleanStream(), settings, {
             voice: activeVoice,
-            // Note: emotion/intensity are passed from opts but the synthesizer reads them
-            // at synthesis time — we pass "warm" as a sensible default; the real emotion
-            // was already applied live to the EmotionEngine during streaming above.
             emotion: "warm",
             intensity: 0.6,
             browser: mode.voice.browser,
           });
         } finally {
-          // NOW parsed has the fully-streamed final values — persist them
           if (parsed.reply) {
             turnsRef.current = [...turnsRef.current, { role: "assistant", content: parsed.reply }];
             void persist("assistant", parsed.reply, parsed.emotion, parsed.intensity);
           }
-
           setSpeaking(false);
           engineRef.current.settle(0.2);
           gazeRef.current = "user";
-          // Hands-free / Live Conversation: hand the turn straight back to the user with small pause
           if (handsFreeRef.current && speechRef.current?.supported) {
-            setTimeout(() => {
-              if (handsFreeRef.current) speechRef.current?.start();
-            }, 280);
+            setTimeout(() => { if (handsFreeRef.current) speechRef.current?.start(); }, 280);
           }
         }
       } catch (error) {
         setBusy(false);
         setSpeaking(false);
-        // Drop the failed turn so the next attempt is not sent twice.
         turnsRef.current = turnsRef.current.filter((turn) => turn !== history[history.length - 1]);
         setLastFailed(message);
         toast.error(error instanceof Error ? error.message : "That did not go through");
@@ -283,10 +253,8 @@ function TalkPage() {
   const speech = useSpeechInput((text) => void send(text), {
     continuous: handsFree,
     onSpeechStart: () => {
-      // Instant Barge-in / Interruption: silence avatar when user speaks
       stopSpeaking();
       setSpeaking(false);
-      // Pre-warm Edge TTS WebSocket in the background while user is speaking
       if (settingsRef.current?.ttsProvider === "edge") {
         const activeVoice = getVoiceForMode(settingsRef.current, mode);
         void warmTts({ data: { voice: activeVoice } }).catch(() => {});
@@ -297,11 +265,7 @@ function TalkPage() {
 
   const toggleMic = useCallback(() => {
     if (speech.listening) speech.stop();
-    else {
-      stopSpeaking();
-      setSpeaking(false);
-      speech.start();
-    }
+    else { stopSpeaking(); setSpeaking(false); speech.start(); }
   }, [speech, stopSpeaking]);
 
   const toggleConversationMode = useCallback(() => {
@@ -324,9 +288,18 @@ function TalkPage() {
     engineRef.current.settle(0.4);
   }, [stopSpeaking]);
 
+  /* ── Status label ── */
+  const statusLabel = busy
+    ? "thinking"
+    : speaking
+      ? "speaking"
+      : speech.listening
+        ? handsFree ? "listening to you" : "listening"
+        : handsFree ? "live ready" : scene.label;
+
   return (
     <div className="relative h-screen overflow-hidden">
-      {/* the room fills the screen; everything else floats over it */}
+      {/* Avatar fills the screen */}
       <div className="absolute inset-0">
         <AvatarStage
           engine={engineRef.current}
@@ -339,42 +312,49 @@ function TalkPage() {
         />
       </div>
 
+      {/* Top bar */}
       <div className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-background/90 to-transparent">
         <TopBar title={mode.name} onTranscript={() => setShowTranscript(true)} />
       </div>
 
-      {/* live status, just under the top bar */}
+      {/* Status chip */}
       <div className="pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center">
-        <span className="flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3.5 py-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/90 backdrop-blur-md">
+        <span
+          className={`flex items-center gap-2 rounded-full border px-3.5 py-1 text-[10px] uppercase tracking-[0.18em] backdrop-blur-md transition-all duration-500 ${
+            speech.listening
+              ? "border-primary/40 bg-primary/10 text-primary"
+              : busy
+                ? "border-border/60 bg-card/60 text-muted-foreground"
+                : "border-border/60 bg-card/60 text-muted-foreground/90"
+          }`}
+        >
           {handsFree ? (
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+            </span>
+          ) : busy ? (
+            <span className="flex items-center gap-[2px]">
+              <span className="h-2 w-[2px] rounded-full bg-muted-foreground animate-wave-1" />
+              <span className="h-2 w-[2px] rounded-full bg-muted-foreground animate-wave-2" />
+              <span className="h-2 w-[2px] rounded-full bg-muted-foreground animate-wave-3" />
             </span>
           ) : null}
-          {busy
-            ? "thinking"
-            : speaking
-              ? "speaking"
-              : speech.listening
-                ? handsFree
-                  ? "listening to you"
-                  : "listening"
-                : handsFree
-                  ? "live ready"
-                  : scene.label}
+          {statusLabel}
         </span>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-3 px-4 pb-6">
+      {/* Bottom controls */}
+      <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-3 px-4 pb-7">
         <Captions items={captions} interim={speech.interim} />
 
+        {/* Action chips */}
         <div className="flex items-center gap-2">
           {speaking ? (
             <button
               type="button"
               onClick={interrupt}
-              className="flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-md transition-colors duration-300 hover:text-foreground"
+              className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/70 px-3.5 py-1.5 text-xs text-muted-foreground backdrop-blur-md transition-all duration-300 hover:border-border hover:text-foreground active:scale-95"
             >
               <Square className="h-3 w-3" />
               Stop
@@ -384,7 +364,7 @@ function TalkPage() {
             <button
               type="button"
               onClick={() => void send(lastFailed)}
-              className="flex items-center gap-2 rounded-full border border-primary/40 bg-card/60 px-3 py-1.5 text-xs text-primary/90 backdrop-blur-md transition-colors duration-300 hover:border-primary"
+              className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-xs text-primary backdrop-blur-md transition-all duration-300 hover:border-primary active:scale-95"
             >
               <RotateCcw className="h-3 w-3" />
               Try again
@@ -392,10 +372,12 @@ function TalkPage() {
           ) : null}
         </div>
 
-        {/* control dock */}
+        {/* Control dock */}
         <div
-          className={`flex w-full max-w-xl items-center gap-2 rounded-full border bg-card/60 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 ${
-            handsFree ? "border-emerald-500/40 ring-1 ring-emerald-500/20" : "border-border/70"
+          className={`flex w-full max-w-xl items-center gap-2.5 rounded-full border bg-card/70 p-2 shadow-2xl backdrop-blur-xl transition-all duration-400 ${
+            handsFree
+              ? "border-primary/40 shadow-primary/10"
+              : "border-border/70"
           }`}
         >
           <MicButton
@@ -404,6 +386,7 @@ function TalkPage() {
             disabled={!speech.supported}
             onToggle={toggleMic}
           />
+
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -423,38 +406,37 @@ function TalkPage() {
                     ? "Say it, or type…"
                     : "Type your message"
               }
-              className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground/60"
+              className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground/50"
             />
+
+            {/* Live mode toggle */}
             {speech.supported ? (
               <button
                 type="button"
                 onClick={toggleConversationMode}
                 aria-pressed={handsFree}
                 aria-label="Live Conversation Mode"
-                title={
+                className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all duration-300 active:scale-95 ${
                   handsFree
-                    ? "Live Conversation Mode ON (auto-listening)"
-                    : "Turn on Live Conversation Mode (no mic taps needed)"
-                }
-                className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all duration-300 ${
-                  handsFree
-                    ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-400 shadow-sm"
+                    ? "border border-primary/40 bg-primary/15 text-primary"
                     : "border border-border/40 text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
               >
-                <Radio className={`h-3.5 w-3.5 ${handsFree ? "animate-pulse text-emerald-400" : ""}`} />
+                <Radio className={`h-3.5 w-3.5 ${handsFree ? "animate-pulse" : ""}`} />
                 <span className="text-[11px] tracking-wide">
-                  {handsFree ? "Live ON" : "Live Mode"}
+                  {handsFree ? "Live ON" : "Live"}
                 </span>
               </button>
             ) : null}
+
+            {/* Send button */}
             <button
               type="submit"
               aria-label="Send"
               disabled={busy || !draft.trim()}
-              className="rounded-full bg-primary p-2.5 text-primary-foreground transition-transform duration-300 hover:scale-105 disabled:opacity-40"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-300 hover:opacity-90 active:scale-95 disabled:opacity-30"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5" />
             </button>
           </form>
         </div>
